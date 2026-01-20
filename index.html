@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>J.A.R.V.I.S. ADAPTIVE</title>
+    <title>J.A.R.V.I.S. STABLE</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&family=Fira+Code:wght@400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -11,83 +11,44 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <style>
-        :root {
-            --primary: #00f2ff;
-            --alert: #ff003c;
-            --bg: #050a10;
-            --glass: rgba(0, 242, 255, 0.1);
-        }
-
-        body {
-            background-color: var(--bg);
-            color: var(--primary);
-            font-family: 'Rajdhani', sans-serif;
-            margin: 0; height: 100vh;
-            display: flex; flex-direction: column; overflow: hidden;
-            background-image: radial-gradient(circle at 50% 50%, #0d1b2a 0%, #000 90%);
-        }
-
-        /* HEADER */
-        .header {
-            padding: 15px; border-bottom: 1px solid rgba(0, 242, 255, 0.2);
-            display: flex; justify-content: space-between; align-items: center;
-            background: rgba(0,0,0,0.7); backdrop-filter: blur(5px);
-        }
-
-        /* TERMINAL */
-        .terminal {
-            flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px;
-        }
-        .msg {
-            padding: 12px; border-radius: 8px; max-width: 90%; word-wrap: break-word; animation: fadeIn 0.3s;
-        }
+        :root { --primary: #00f2ff; --bg: #050a10; --glass: rgba(0, 242, 255, 0.1); }
+        body { background: var(--bg); color: var(--primary); font-family: 'Rajdhani', sans-serif; margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; background-image: radial-gradient(circle at 50% 50%, #0d1b2a 0%, #000 90%); }
+        
+        .header { padding: 15px; border-bottom: 1px solid rgba(0,242,255,0.2); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.8); }
+        .terminal { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .msg { padding: 12px; border-radius: 8px; max-width: 90%; word-wrap: break-word; animation: fadeIn 0.3s; }
         .msg.jarvis { border-left: 3px solid var(--primary); background: linear-gradient(90deg, var(--glass), transparent); align-self: flex-start; }
         .msg.user { border-right: 3px solid #fff; background: rgba(255,255,255,0.05); align-self: flex-end; text-align: right; }
         .msg.sys { font-size: 0.8em; color: #888; text-align: center; width: 100%; align-self: center; border: 1px dashed #333; padding: 5px; }
-
-        /* CODE */
+        
         pre { background: #0b1015; padding: 10px; border: 1px solid #333; overflow-x: auto; border-radius: 5px; }
         code { font-family: 'Fira Code', monospace; color: #7ecaff; font-size: 0.85em; }
-
-        /* REACTOR */
-        .reactor-container {
-            height: 240px; display: flex; justify-content: center; align-items: center;
-            background: radial-gradient(circle, rgba(0,242,255,0.05) 0%, transparent 60%);
-        }
-        .arc {
-            width: 100px; height: 100px; border-radius: 50%; border: 2px solid var(--primary);
-            display: flex; justify-content: center; align-items: center; cursor: pointer;
-            box-shadow: 0 0 20px var(--primary); transition: 0.3s; background: rgba(0,0,0,0.5);
-            font-size: 24px;
-        }
+        
+        .reactor-container { height: 240px; display: flex; justify-content: center; align-items: center; }
+        .arc { width: 100px; height: 100px; border-radius: 50%; border: 2px solid var(--primary); display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 0 20px var(--primary); transition: 0.3s; background: rgba(0,0,0,0.5); font-size: 24px; }
         .arc:active { transform: scale(0.95); }
         .arc.busy { border-color: #ffd700; box-shadow: 0 0 40px #ffd700; animation: spin 1s infinite linear; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; } }
 
-        /* SETTINGS */
-        #settings {
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95);
-            z-index: 99; justify-content: center; align-items: center; flex-direction: column;
-        }
+        #settings { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 99; justify-content: center; align-items: center; flex-direction: column; }
         .panel { width: 85%; max-width: 400px; text-align: center; border: 1px solid var(--primary); padding: 20px; background: #080f16; }
         input { width: 100%; padding: 12px; margin: 15px 0; background: #000; border: 1px solid #444; color: #fff; text-align: center; }
         button { width: 100%; padding: 12px; margin-top: 10px; background: var(--glass); color: var(--primary); border: 1px solid var(--primary); cursor: pointer; font-weight: bold; }
         button.check-btn { border-color: #ffd700; color: #ffd700; }
-
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div style="font-family:'Orbitron'; font-weight:900">J.A.R.V.I.S. <span style="font-size:0.6em; opacity:0.7">ADAPTIVE</span></div>
+        <div style="font-family:'Orbitron'; font-weight:900">J.A.R.V.I.S.</div>
         <i class="fas fa-cog" onclick="ui.toggleSettings()"></i>
     </div>
 
     <div class="terminal" id="term">
         <div class="msg jarvis">
-            <strong>SYSTEM ONLINE.</strong><br>
-            Нажмите на шестеренку и запустите "SYSTEM CHECK", чтобы я нашел доступную модель.
+            <strong>SYSTEM REBOOT.</strong><br>
+            Если есть ошибки — нажмите шестеренку и "FORCE UPDATE CORE".
         </div>
     </div>
 
@@ -97,10 +58,10 @@
 
     <div id="settings">
         <div class="panel">
-            <h3>CONFIGURATION</h3>
-            <input type="text" id="apikey" placeholder="Paste API Key here...">
+            <h3>CORE SETTINGS</h3>
+            <input type="text" id="apikey" placeholder="Paste API Key...">
             <button onclick="core.saveKey()">SAVE KEY</button>
-            <button class="check-btn" onclick="core.autoDiscover()">RUN SYSTEM CHECK (AUTO-FIX)</button>
+            <button class="check-btn" onclick="core.autoDiscover()">FORCE UPDATE CORE</button>
             <button onclick="ui.toggleSettings()" style="border:none; margin-top:10px; font-size:0.8em">CLOSE</button>
             <div id="status-log" style="font-size:0.7em; margin-top:10px; color:#888; text-align:left; max-height:100px; overflow:auto"></div>
         </div>
@@ -110,87 +71,93 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // --- CORE SYSTEM ---
         const core = {
             key: localStorage.getItem('jarvis_key') || '',
-            model: localStorage.getItem('jarvis_model') || 'gemini-1.5-flash',
-            
+            model: localStorage.getItem('jarvis_model') || '', // Оставляем пустым по умолчанию
+
             saveKey: () => {
                 const val = document.getElementById('apikey').value.trim();
                 if(val.length < 10) return alert("Key too short");
                 core.key = val;
                 localStorage.setItem('jarvis_key', val);
-                ui.log("Key saved. Running diagnostic...", "sys");
+                ui.log("Key updated. Running scan...", "sys");
                 core.autoDiscover();
             },
 
-            // ГЛАВНАЯ ФИШКА: Автопоиск рабочей модели
+            // --- НОВАЯ ЛОГИКА ПОИСКА МОДЕЛИ ---
             autoDiscover: async () => {
-                if(!core.key) return alert("First, save the API Key!");
+                if(!core.key) return alert("No API Key!");
                 const status = document.getElementById('status-log');
-                status.innerHTML = "Scanning available models...";
+                status.innerHTML = "Scanning Google Servers...";
                 
                 try {
-                    // 1. Запрашиваем список всех моделей
                     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${core.key}`);
                     const data = await res.json();
-
-                    if(data.error) throw new Error(data.error.message);
-                    if(!data.models) throw new Error("No models returned list");
-
-                    // 2. Ищем лучшую доступную
-                    // Приоритет: 1.5-flash -> 1.5-pro -> 1.0-pro
-                    let found = null;
-                    const available = data.models.map(m => m.name); // Получаем список типа models/gemini-pro
                     
-                    status.innerHTML += "<br>Found: " + available.length + " models.";
+                    if(data.error) throw new Error(data.error.message);
+                    if(!data.models) throw new Error("List empty");
 
-                    if(available.some(n => n.includes('gemini-1.5-flash'))) found = 'gemini-1.5-flash';
-                    else if(available.some(n => n.includes('gemini-1.5-pro'))) found = 'gemini-1.5-pro';
-                    else if(available.some(n => n.includes('gemini-pro'))) found = 'gemini-pro';
-                    else if(available.some(n => n.includes('gemini-1.0-pro'))) found = 'gemini-1.0-pro';
+                    // Фильтруем только те, что поддерживают генерацию текста
+                    const viableModels = data.models.filter(m => 
+                        m.supportedGenerationMethods && 
+                        m.supportedGenerationMethods.includes("generateContent")
+                    );
 
-                    if(found) {
-                        core.model = found;
-                        localStorage.setItem('jarvis_model', found);
-                        status.innerHTML += `<br><span style="color:#0f0">CONNECTED TO: ${found}</span>`;
-                        ui.log(`SYSTEM CALIBRATED.<br>Active Core: <b>${found}</b>`, "jarvis");
+                    // Ищем самую новую версию Flash или Pro
+                    // Сортировка по приоритету
+                    let bestModelObj = viableModels.find(m => m.name.includes('gemini-1.5-flash')) || 
+                                       viableModels.find(m => m.name.includes('gemini-1.5-pro')) ||
+                                       viableModels.find(m => m.name.includes('gemini-pro'));
+                    
+                    if(bestModelObj) {
+                        // ВАЖНО: Берем точное имя (например models/gemini-1.5-flash-001)
+                        // и убираем приставку "models/" для URL
+                        const exactName = bestModelObj.name.replace('models/', '');
+                        
+                        core.model = exactName;
+                        localStorage.setItem('jarvis_model', exactName);
+                        
+                        status.innerHTML += `<br><span style="color:#0f0">LOCKED: ${exactName}</span>`;
+                        ui.log(`CORE UPDATED. Locked to exact ID: <b>${exactName}</b>`, "jarvis");
                         setTimeout(() => ui.toggleSettings(), 1500);
                     } else {
-                        status.innerHTML += `<br><span style="color:red">NO COMPATIBLE CHAT MODELS FOUND.</span>`;
-                        alert("Google вернул список моделей, но в нем нет текстовых (generateContent). Проверьте права ключа.");
+                        throw new Error("No chat models found in your list.");
                     }
 
                 } catch(e) {
-                    status.innerHTML += `<br><span style="color:red">ERROR: ${e.message}</span>`;
-                    ui.log("DIAGNOSTIC FAILED: " + e.message, "sys");
+                    status.innerHTML += `<br><span style="color:red">ERR: ${e.message}</span>`;
+                    ui.log("SCAN FAILED: " + e.message, "sys");
                 }
             },
 
             process: async (text) => {
                 if(!core.key) { ui.toggleSettings(); return; }
+                if(!core.model) { await core.autoDiscover(); } // Если модели нет, ищем
+                
                 ui.setBusy(true);
 
                 try {
-                    // Используем автоматически найденную модель
+                    // Используем сохраненный ТОЧНЫЙ ID
                     const url = `https://generativelanguage.googleapis.com/v1beta/models/${core.model}:generateContent?key=${core.key}`;
                     
                     const response = await fetch(url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            contents: [{ parts: [{ text: "Ты J.A.R.V.I.S. Помощник. Отвечай кратко на русском. " + text }] }]
+                            contents: [{ parts: [{ text: "Ты J.A.R.V.I.S. Отвечай кратко, по делу. " + text }] }]
                         })
                     });
 
                     const data = await response.json();
                     
                     if(data.error) {
-                        // Если ошибка 404, значит модель устарела, запускаем автопоиск
+                        // Если даже точный ID умер (редко), сбрасываем и ищем снова
                         if(data.error.code === 404) {
-                            ui.log("Model mismatch. Auto-fixing...", "sys");
+                            ui.log("Core version deprecated. Updating...", "sys");
+                            localStorage.removeItem('jarvis_model');
+                            core.model = '';
                             await core.autoDiscover();
-                            throw new Error("Re-calibrating... Try again.");
+                            throw new Error("System updated. Please repeat request.");
                         }
                         throw new Error(data.error.message);
                     }
@@ -208,12 +175,10 @@
             }
         };
 
-        // --- UI & TOOLS ---
         const ui = {
             mic: document.getElementById('mic'),
             term: document.getElementById('term'),
             settings: document.getElementById('settings'),
-            
             log: (html, type) => {
                 const d = document.createElement('div');
                 d.className = `msg ${type}`;
@@ -221,59 +186,42 @@
                 ui.term.appendChild(d);
                 setTimeout(()=>ui.term.scrollTop = ui.term.scrollHeight, 100);
             },
-            
             toggleSettings: () => {
                 const show = ui.settings.style.display !== 'flex';
                 ui.settings.style.display = show ? 'flex' : 'none';
                 if(show && core.key) document.getElementById('apikey').value = core.key;
             },
-            
-            setBusy: (isBusy) => {
-                ui.mic.className = isBusy ? 'arc busy' : 'arc';
-            }
+            setBusy: (isBusy) => { ui.mic.className = isBusy ? 'arc busy' : 'arc'; }
         };
 
         const voice = {
             speak: (txt) => {
                 if(!window.speechSynthesis) return;
                 window.speechSynthesis.cancel();
-                const u = new SpeechSynthesisUtterance(txt.substring(0, 200));
-                u.lang = 'ru-RU';
+                const u = new SpeechSynthesisUtterance(txt.substring(0, 300));
+                u.lang = 'ru-RU'; u.rate = 1.1;
                 window.speechSynthesis.speak(u);
             }
         };
 
-        // --- SPEECH RECOGNITION ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if(SpeechRecognition) {
             const rec = new SpeechRecognition();
             rec.lang = 'ru-RU';
-            
             ui.mic.onclick = () => {
                 if(ui.mic.classList.contains('busy')) return;
-                try { rec.start(); tg.HapticFeedback.impactOccurred('medium'); } 
-                catch(e) { rec.stop(); }
+                try { rec.start(); tg.HapticFeedback.impactOccurred('medium'); } catch(e) { rec.stop(); }
             };
-            
             rec.onstart = () => ui.mic.style.boxShadow = "0 0 50px #fff";
             rec.onend = () => ui.mic.style.boxShadow = "";
             rec.onresult = (e) => {
                 const txt = e.results[0][0].transcript;
-                if(txt.trim()) {
-                    ui.log(txt, "user");
-                    core.process(txt);
-                }
+                if(txt.trim()) { ui.log(txt, "user"); core.process(txt); }
             };
-        } else {
-            ui.log("Voice input not supported", "sys");
-        }
+        } else { ui.log("Mic not supported", "sys"); }
 
-        // Auto-check on load if key exists but model is unknown
-        if(core.key && !localStorage.getItem('jarvis_model')) {
-            setTimeout(core.autoDiscover, 1000);
-        } else if(!core.key) {
-            setTimeout(ui.toggleSettings, 500);
-        }
+        if(core.key && !core.model) setTimeout(core.autoDiscover, 1000);
+        else if(!core.key) setTimeout(ui.toggleSettings, 500);
 
     </script>
 </body>

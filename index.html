@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>J.A.R.V.I.S. WEB KERNEL</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <style>
+        :root {
+            --primary: #00f2ff; /* Arc Reactor Blue */
+            --secondary: #0051ff;
+            --alert: #ff003c;
+            --bg: #050a10;
+            --glass: rgba(0, 242, 255, 0.05);
+            --scanline: rgba(0, 0, 0, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--primary);
+            font-family: 'Rajdhani', sans-serif;
+            margin: 0;
+            padding: 20px;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* --- HUD BACKGROUND EFFECTS --- */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2));
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, transparent 50%, black 150%);
+            pointer-events: none;
+            z-index: 9;
+        }
+
+        /* --- HEADER --- */
+        header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--primary);
+            padding-bottom: 10px;
+            box-shadow: 0 2px 15px var(--glass);
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px var(--primary);
+        }
+
+        .status-badge {
+            font-size: 0.7rem;
+            border: 1px solid var(--primary);
+            padding: 2px 6px;
+            background: var(--glass);
+        }
+
+        /* --- ARC REACTOR CORE --- */
+        .core-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        .arc-circle {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 20px var(--primary), inset 0 0 20px var(--primary);
+        }
+
+        .c1 { width: 100%; height: 100%; border-width: 2px; border-style: dashed; animation: spin 10s linear infinite; opacity: 0.7; }
+        .c2 { width: 80%; height: 80%; border-width: 4px; border-top-color: transparent; border-bottom-color: transparent; animation: spin-rev 5s linear infinite; }
+        .c3 { width: 60%; height: 60%; background: rgba(0, 242, 255, 0.1); box-shadow: 0 0 30px var(--primary); animation: pulse 2s infinite; }
+
+        .core-text {
+            position: absolute;
+            z-index: 5;
+            text-align: center;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .core-val {
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-shadow: 0 0 15px var(--primary);
+        }
+        .core-label { font-size: 0.7rem; letter-spacing: 2px; opacity: 0.8; }
+
+        /* --- DATA GRID --- */
+        .data-grid {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .data-card {
+            background: rgba(0, 10, 20, 0.6);
+            border: 1px solid rgba(0, 242, 255, 0.3);
+            padding: 10px;
+            position: relative;
+        }
+        
+        /* Corner decorations */
+        .data-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 5px; height: 5px; border-top: 2px solid var(--primary); border-left: 2px solid var(--primary);
+        }
+        .data-card::after {
+            content: ''; position: absolute; bottom: 0; right: 0; width: 5px; height: 5px; border-bottom: 2px solid var(--primary); border-right: 2px solid var(--primary);
+        }
+
+        .card-title { font-size: 0.7rem; color: #fff; opacity: 0.7; margin-bottom: 5px; }
+        .card-value { font-family: 'Orbitron'; font-size: 1.1rem; color: var(--primary); }
+
+        /* --- CONTROLS --- */
+        .control-panel {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .stark-btn {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 15px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+        }
+
+        .stark-btn:active {
+            background: var(--primary);
+            color: var(--bg);
+            box-shadow: 0 0 20px var(--primary);
+        }
+        
+        /* Loading Bar Animation */
+        .stark-btn.loading::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; height: 100%; width: 0%;
+            background: rgba(255, 255, 255, 0.3);
+            animation: load 2s ease forwards;
+        }
+
+        .main-btn {
+            background: rgba(0, 242, 255, 0.1);
+            font-size: 1rem;
+        }
+
+        /* --- ANIMATIONS --- */
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes spin-rev { 0% { transform: rotate(360deg); } 100% { transform: rotate(0deg); } }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(1); opacity: 0.5; } }
+        @keyframes load { 0% { width: 0%; } 100% { width: 100%; } }
+        
+        /* Glitch effect for text */
+        .glitch-text { animation: glitch 3s infinite; }
+        @keyframes glitch {
+            0% { opacity: 1; } 95% { opacity: 1; }
+            96% { opacity: 0.8; transform: translateX(2px); }
+            97% { opacity: 1; transform: translateX(0); }
+            98% { opacity: 0.8; transform: translateX(-2px); }
+            99% { opacity: 1; transform: translateX(0); }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="scanlines"></div>
+    <div class="vignette"></div>
+
+    <header>
+        <div class="logo">J.A.R.V.I.S.</div>
+        <div class="status-badge" id="conn-status">ONLINE</div>
+    </header>
+
+    <div class="core-container">
+        <div class="arc-circle c1"></div>
+        <div class="arc-circle c2"></div>
+        <div class="arc-circle c3"></div>
+        <div class="core-text">
+            <div class="core-val" id="cpu-load">0%</div>
+            <div class="core-label">SYSTEM LOAD</div>
+        </div>
+    </div>
+
+    <div class="data-grid">
+        <div class="data-card">
+            <div class="card-title">USER ID</div>
+            <div class="card-value glitch-text" id="user-name">SCANNING...</div>
+        </div>
+        <div class="data-card">
+            <div class="card-title">SUIT INTEGRITY</div>
+            <div class="card-value" id="integrity">100%</div>
+        </div>
+        <div class="data-card">
+            <div class="card-title">LATENCY</div>
+            <div class="card-value" id="latency">12ms</div>
+        </div>
+        <div class="data-card">
+            <div class="card-title">PROTOCOL</div>
+            <div class="card-value">MARK-85</div>
+        </div>
+    </div>
+
+    <div class="control-panel">
+        <button class="stark-btn main-btn" onclick="runDiagnostics()">
+            INITIALIZE DIAGNOSTICS
+        </button>
+        <button class="stark-btn" onclick="toggleProtocol()">
+            ACTIVATE SENTRY MODE
+        </button>
+    </div>
+
+    <script>
+        // --- STARK INDUSTRIES INITIALIZATION ---
+        const tg = window.Telegram.WebApp;
+
+        // Init App
+        tg.expand(); // Make it full screen
+        tg.ready();
+
+        // Theme colors enforcement (Jarvis is always dark/cyan)
+        tg.setHeaderColor('#050a10');
+        tg.setBackgroundColor('#050a10');
+
+        // --- DOM ELEMENTS ---
+        const els = {
+            userName: document.getElementById('user-name'),
+            cpuLoad: document.getElementById('cpu-load'),
+            integrity: document.getElementById('integrity'),
+            latency: document.getElementById('latency'),
+            connStatus: document.getElementById('conn-status')
+        };
+
+        // --- USER RECOGNITION ---
+        function initJarvis() {
+            const user = tg.initDataUnsafe?.user;
+            
+            if (user) {
+                // Determine rank based on ID (Just for fun)
+                const rank = user.id === 777000 ? "CREATOR" : "AVENGER";
+                els.userName.innerHTML = `${user.first_name.toUpperCase()}<br><span style="font-size:0.6em; opacity:0.7">RANK: ${rank}</span>`;
+            } else {
+                els.userName.innerText = "UNKNOWN ENTITY";
+                els.connStatus.innerText = "UNSECURE";
+                els.connStatus.style.borderColor = "var(--alert)";
+                tg.HapticFeedback.notificationOccurred('warning');
+            }
+        }
+
+        // --- SYSTEM SIMULATION LOOP ---
+        setInterval(() => {
+            // Simulate changing values
+            const load = Math.floor(Math.random() * 30) + 10;
+            const lat = Math.floor(Math.random() * 20) + 5;
+            
+            els.cpuLoad.innerText = load + "%";
+            els.latency.innerText = lat + "ms";
+
+            // Visual effects for high load
+            if(load > 35) {
+                els.cpuLoad.style.color = "var(--alert)";
+            } else {
+                els.cpuLoad.style.color = "var(--primary)";
+            }
+        }, 2000);
+
+        // --- INTERACTIVE FUNCTIONS ---
+
+        function runDiagnostics() {
+            // Haptic feedback (Tactile feel)
+            tg.HapticFeedback.impactOccurred('heavy');
+            
+            const btn = event.currentTarget;
+            if(btn.classList.contains('loading')) return;
+
+            btn.classList.add('loading');
+            btn.innerText = "CALIBRATING...";
+
+            let progress = 100;
+            const intCheck = setInterval(() => {
+                progress -= 5;
+                els.integrity.innerText = progress + "%";
+                if(progress < 40) els.integrity.style.color = "var(--alert)";
+            }, 100);
+
+            setTimeout(() => {
+                clearInterval(intCheck);
+                btn.classList.remove('loading');
+                btn.innerText = "DIAGNOSTICS COMPLETE";
+                els.integrity.innerText = "100%";
+                els.integrity.style.color = "var(--primary)";
+                tg.HapticFeedback.notificationOccurred('success');
+            }, 2000);
+        }
+
+        let sentryActive = false;
+        function toggleProtocol() {
+            tg.HapticFeedback.impactOccurred('medium');
+            const btn = event.currentTarget;
+            
+            sentryActive = !sentryActive;
+
+            if (sentryActive) {
+                btn.style.borderColor = "var(--alert)";
+                btn.style.color = "var(--alert)";
+                btn.innerText = "DEACTIVATE SENTRY";
+                document.documentElement.style.setProperty('--primary', '#ff003c'); // Switch to Kill Mode Red
+                tg.HapticFeedback.notificationOccurred('error'); // Strong vibe
+            } else {
+                btn.style.borderColor = "";
+                btn.style.color = "";
+                btn.innerText = "ACTIVATE SENTRY MODE";
+                document.documentElement.style.setProperty('--primary', '#00f2ff'); // Back to Blue
+                tg.HapticFeedback.notificationOccurred('success');
+            }
+        }
+
+        // Start the kernel
+        initJarvis();
+
+    </script>
+</body>
+</html>

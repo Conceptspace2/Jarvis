@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>J.A.R.V.I.S. ULTIMATE</title>
+    <title>J.A.R.V.I.S. DEBUG</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;700&family=Fira+Code:wght@400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -14,440 +14,212 @@
     <style>
         :root {
             --primary: #00f7ff;
-            --secondary: #0051ff;
-            --active: #ffd900; /* Gold */
+            --active: #ffd900;
             --alert: #ff0055;
             --bg: #02060c;
             --glass: rgba(0, 247, 255, 0.08);
-            --glow: 0 0 20px var(--primary), 0 0 40px var(--secondary);
         }
 
-        * {
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-            scrollbar-width: none; /* Firefox */
-        }
-        *::-webkit-scrollbar { display: none; /* Chrome/Safari */ }
-
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
         body {
             background-color: var(--bg);
-            background-image: 
-                radial-gradient(circle at 50% 50%, rgba(0, 81, 255, 0.2) 0%, transparent 60%),
-                linear-gradient(0deg, rgba(0,0,0,0.9) 0%, rgba(2,6,12,0.8) 100%);
             color: var(--primary);
             font-family: 'Rajdhani', sans-serif;
-            margin: 0;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+            margin: 0; height: 100vh;
+            display: flex; flex-direction: column; overflow: hidden;
         }
 
-        /* --- SCANLINES EFFECT --- */
-        body::after {
-            content: "";
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            background-size: 100% 4px, 3px 100%;
-            pointer-events: none;
-            z-index: 999;
-            opacity: 0.6;
-        }
-
-        /* --- UI LAYOUT --- */
+        /* UI */
         .header {
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%);
-            border-bottom: 1px solid rgba(0, 247, 255, 0.2);
-            z-index: 20;
+            padding: 15px; display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid rgba(0, 247, 255, 0.2); background: #000;
         }
-
         .terminal {
-            flex: 1;
-            padding: 15px 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            scroll-behavior: smooth;
-            mask-image: linear-gradient(to bottom, transparent 0%, black 5%, black 95%, transparent 100%);
+            flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px;
         }
-
-        /* --- CHAT BUBBLES --- */
         .msg {
-            max-width: 92%;
-            padding: 12px 18px;
-            position: relative;
-            animation: slideIn 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
-            word-wrap: break-word;
-            user-select: text; /* Разрешаем выделять текст ответов */
+            max-width: 90%; padding: 10px 15px; border-radius: 10px; word-wrap: break-word; user-select: text;
         }
-        
-        .msg.jarvis {
-            align-self: flex-start;
-            border-left: 3px solid var(--primary);
-            background: linear-gradient(90deg, rgba(0, 247, 255, 0.1) 0%, transparent 100%);
-            border-top-right-radius: 15px;
-            border-bottom-right-radius: 15px;
-        }
-        
-        .msg.user {
-            align-self: flex-end;
-            text-align: right;
-            border-right: 3px solid #fff;
-            background: linear-gradient(-90deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
-            color: #e0e0e0;
-            border-top-left-radius: 15px;
-            border-bottom-left-radius: 15px;
-        }
+        .msg.jarvis { background: rgba(0, 247, 255, 0.1); border-left: 3px solid var(--primary); align-self: flex-start; }
+        .msg.user { background: rgba(255, 255, 255, 0.05); border-right: 3px solid #fff; align-self: flex-end; text-align: right; }
+        .msg.error { border-color: var(--alert); color: var(--alert); background: rgba(255, 0, 85, 0.1); }
 
-        /* --- CODE BLOCKS STYLING (HOLO-TERMINAL) --- */
-        pre {
-            background: rgba(0, 10, 20, 0.9) !important;
-            border: 1px solid var(--secondary);
-            border-radius: 8px;
-            padding: 15px !important;
-            margin: 10px 0 !important;
-            overflow-x: auto;
-            box-shadow: inset 0 0 20px rgba(0, 81, 255, 0.2);
-            position: relative;
-        }
-        pre::before {
-            content: "STARK CODE TERMINAL //";
-            position: absolute; top: 0; left: 0;
-            font-family: 'Orbitron'; font-size: 0.6rem; color: var(--secondary);
-            padding: 2px 8px; opacity: 0.7;
-        }
-        code {
-            font-family: 'Fira Code', monospace !important;
-            font-size: 0.85rem !important;
-            color: #a8d1ff !important; /* Light blue for code */
-        }
+        /* CODE BLOCKS */
+        pre { background: #0d1117; padding: 10px; border-radius: 5px; overflow-x: auto; border: 1px solid #30363d; }
+        code { font-family: 'Fira Code', monospace; color: #a8d1ff; font-size: 0.8em; }
 
-        /* --- ARC REACTOR (INTERFACE) --- */
+        /* ARC REACTOR */
         .interface-zone {
-            height: 300px;
-            display: flex; justify-content: center; align-items: center;
-            position: relative;
-            background: radial-gradient(circle at center, rgba(0, 247, 255, 0.06) 0%, transparent 60%);
+            height: 250px; display: flex; justify-content: center; align-items: center;
+            background: radial-gradient(circle, rgba(0,247,255,0.1) 0%, transparent 70%);
         }
-
         .arc-reactor {
-            width: 130px; height: 130px;
-            border-radius: 50%;
-            border: 3px solid var(--primary);
-            position: relative; cursor: pointer;
-            box-shadow: var(--glow), inset var(--glow);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            display: flex; justify-content: center; align-items: center;
-            z-index: 10; background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(5px);
+            width: 100px; height: 100px; border-radius: 50%; border: 2px solid var(--primary);
+            display: flex; justify-content: center; align-items: center; cursor: pointer;
+            box-shadow: 0 0 20px var(--primary); transition: 0.3s; z-index: 10;
         }
+        .arc-reactor:active { transform: scale(0.9); }
+        .arc-reactor.thinking { border-color: var(--active); box-shadow: 0 0 30px var(--active); animation: spin 2s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
 
-        .arc-icon { font-size: 2.2rem; color: var(--primary); transition: 0.3s; filter: drop-shadow(0 0 10px var(--primary)); }
-
-        /* States & Animations */
-        .arc-reactor:active { transform: scale(0.95); }
-        
-        .arc-reactor.listening {
-            border-color: #fff; box-shadow: 0 0 60px #fff, inset 0 0 40px #fff;
-        }
-        .arc-reactor.listening .arc-icon { color: #fff; animation: pulse-fast 1s infinite; }
-
-        .arc-reactor.thinking {
-            border-color: var(--active); box-shadow: 0 0 80px var(--active), inset 0 0 30px var(--active);
-            animation: rotate-reactor 3s linear infinite;
-        }
-        .arc-reactor.thinking .arc-icon { color: var(--active); animation: pulse-slow 2s infinite; }
-
-        .arc-reactor.speaking {
-            border-color: var(--primary);
-            animation: speak-pulse 0.3s ease-in-out infinite alternate;
-        }
-
-        /* DECORATIVE RINGS */
-        .ring {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            border-radius: 50%; border: 1px solid var(--primary); opacity: 0.2;
-            pointer-events: none;
-        }
-        .r1 { width: 180px; height: 180px; border-style: dashed; animation: rotate-rev 20s linear infinite; }
-        .r2 { width: 240px; height: 240px; border-width: 2px; opacity: 0.1; animation: rotate-slow 40s linear infinite; }
-        .r3 { width: 350px; height: 350px; border: none; background: radial-gradient(transparent 50%, rgba(0, 247, 255, 0.03) 70%); }
-
-
-        /* --- SETTINGS MODAL --- */
+        /* SETTINGS */
         #settings-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95); z-index: 100;
-            display: none; justify-content: center; align-items: center;
-            backdrop-filter: blur(10px);
+            background: rgba(0,0,0,0.9); z-index: 100; display: none;
+            justify-content: center; align-items: center;
         }
         .modal-content {
-            width: 85%; max-width: 400px;
-            background: linear-gradient(145deg, #050a14, #02060c);
-            border: 2px solid var(--primary);
-            padding: 30px; text-align: center;
-            box-shadow: 0 0 50px rgba(0, 247, 255, 0.3);
-            position: relative;
-            overflow: hidden;
+            width: 80%; background: #111; padding: 20px; border: 1px solid var(--primary); text-align: center;
         }
-        .modal-content::before {
-            content: 'SECURITY CLEARANCE REQUIRED';
-            position: absolute; top: 10px; left: 0; width: 100%;
-            font-size: 0.6rem; letter-spacing: 3px; opacity: 0.6; font-family: 'Orbitron';
-        }
-        input {
-            width: 100%; padding: 15px; margin: 20px 0;
-            background: rgba(0,0,0,0.5); border: 1px solid var(--secondary); color: var(--primary);
-            font-family: 'Fira Code'; font-size: 0.9rem; outline: none; text-align: center;
-            transition: 0.3s;
-        }
-        input:focus { border-color: var(--primary); box-shadow: 0 0 20px var(--glass); }
-        .btn {
-            background: linear-gradient(90deg, transparent, var(--glass), transparent);
-            border: 1px solid var(--primary); color: var(--primary);
-            padding: 15px 30px; font-family: 'Orbitron'; font-weight: 900;
-            letter-spacing: 2px; cursor: pointer; transition: 0.3s;
-            position: relative; overflow: hidden; width: 100%;
-        }
-        .btn:hover { background: var(--primary); color: #000; box-shadow: 0 0 30px var(--primary); }
-
-        /* ANIMATIONS */
-        @keyframes slideIn { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        @keyframes rotate-reactor { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes rotate-slow { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
-        @keyframes rotate-rev { 0% { transform: translate(-50%, -50%) rotate(360deg); } 100% { transform: translate(-50%, -50%) rotate(0deg); } }
-        @keyframes pulse-fast { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        @keyframes pulse-slow { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.7; } }
-        @keyframes speak-pulse { from { box-shadow: 0 0 20px var(--primary); } to { box-shadow: 0 0 50px var(--primary), 0 0 80px var(--secondary); } }
+        input { width: 100%; padding: 10px; margin: 15px 0; background: #222; border: 1px solid #444; color: #fff; text-align: center; }
+        .btn { padding: 10px 20px; background: var(--primary); border: none; font-weight: bold; cursor: pointer; }
 
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div style="font-family: 'Orbitron'; font-weight: 900; letter-spacing: 2px; font-size: 1.2rem; text-shadow: 0 0 10px var(--primary);">
-            J.A.R.V.I.S. <span style="font-size: 0.6em; color: var(--active); vertical-align: super;">ULTIMATE</span>
-        </div>
-        <i class="fas fa-cog fa-spin-hover" style="cursor: pointer; font-size: 1.4rem; padding: 10px; opacity: 0.8; transition: 0.3s" onclick="toggleSettings()"></i>
+        <div>J.A.R.V.I.S. <span style="font-size: 0.7em; color: var(--active);">v2.0 FIXED</span></div>
+        <i class="fas fa-cog" onclick="toggleSettings()"></i>
     </div>
 
     <div class="terminal" id="terminal">
-        <div class="msg jarvis">
-            SYSTEMS UPGRADED. MARK-90 PROTOCOL ONLINE.<br>
-            Я готов генерировать код, структуры презентаций и сложные технические решения.
-        </div>
+        <div class="msg jarvis">SYSTEM REBOOTED.<br>Использую протокол Gemini 1.5 Flash.<br>Жду ввода ключа.</div>
     </div>
 
     <div class="interface-zone">
-        <div class="ring r1"></div>
-        <div class="ring r2"></div>
-        <div class="ring r3"></div>
-        
-        <div class="arc-reactor" id="mic-btn">
-            <i class="fas fa-microphone arc-icon" id="mic-icon"></i>
-        </div>
+        <div class="arc-reactor" id="mic-btn"><i class="fas fa-microphone" id="mic-icon"></i></div>
     </div>
 
     <div id="settings-modal">
         <div class="modal-content">
-            <h3 style="font-family: 'Orbitron'; margin: 20px 0 10px; font-size: 1.5rem;">POWER SOURCE</h3>
-            <p style="font-size: 0.8rem; opacity: 0.7; margin-bottom: 20px;">INSERT FRESH GOOGLE GEMINI API KEY:</p>
-            <input type="password" id="api-key-input" placeholder="AIza...">
-            <button class="btn" onclick="saveSettings()">INITIALIZE SYSTEM</button>
-            <p style="font-size: 0.7rem; color: var(--alert); margin-top: 20px; letter-spacing: 1px;">WARNING: INVALID KEYS WILL CAUSE SYSTEM FAILURE.</p>
+            <h3>API KEY CONFIG</h3>
+            <input type="text" id="api-key-input" placeholder="Paste your AIza... key here">
+            <button class="btn" onclick="saveSettings()">SAVE & CONNECT</button>
+            <p style="font-size: 0.7rem; margin-top: 10px; color: #888;">Key is stored on your device only.</p>
         </div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        tg.enableClosingConfirmation();
-        tg.setHeaderColor('#02060c');
-        tg.setBackgroundColor('#02060c');
 
-        // --- CONFIGURATION ---
-        const ELEMENTS = {
-            micBtn: document.getElementById('mic-btn'),
-            micIcon: document.getElementById('mic-icon'),
-            terminal: document.getElementById('terminal'),
+        const EL = {
+            mic: document.getElementById('mic-btn'),
+            term: document.getElementById('terminal'),
             modal: document.getElementById('settings-modal'),
-            keyInput: document.getElementById('api-key-input')
+            input: document.getElementById('api-key-input')
         };
 
-        let API_KEY = localStorage.getItem('jarvis_ultimate_key') || '';
+        let API_KEY = localStorage.getItem('jarvis_fixed_key') || '';
         let isProcessing = false;
 
-        // Настройка Markdown парсера для красивого кода
-        marked.setOptions({
-            highlight: function(code, lang) {
-                return code; // В будущем можно подключить PrismJS для подсветки синтаксиса
-            },
-            breaks: true
-        });
-
-
-        // --- SPEECH RECOGNITION ---
+        // --- SPEECH ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition;
-
+        
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
             recognition.lang = 'ru-RU';
-            recognition.continuous = false;
-            recognition.interimResults = false;
-
-            recognition.onstart = () => {
-                setVisualState('listening');
-                tg.HapticFeedback.impactOccurred('medium');
-            };
-
-            recognition.onend = () => {
-                if (!isProcessing) setVisualState('idle');
-            };
-
-            recognition.onresult = (event) => {
-                const text = event.results[0][0].transcript;
-                if(text.trim().length > 0) {
-                    logHTML(text, "user");
-                    processAI(text);
-                }
-            };
-
-            recognition.onerror = (event) => {
-                setVisualState('idle');
-                if(event.error === 'not-allowed') logHTML("ERROR: MICROPHONE ACCESS DENIED", "jarvis alert");
+            recognition.onstart = () => EL.mic.style.boxShadow = "0 0 50px white";
+            recognition.onend = () => { if(!isProcessing) EL.mic.style.boxShadow = ""; };
+            recognition.onresult = (e) => {
+                const text = e.results[0][0].transcript;
+                log(`USER: ${text}`, 'user');
+                processAI(text);
             };
         } else {
-            logHTML("AUDITORY SENSORS OFFLINE (Browser not supported)", "jarvis alert");
+            log("Микрофон не поддерживается в этом браузере.", "error");
         }
 
-        // --- INTERACTION ---
-        ELEMENTS.micBtn.addEventListener('click', () => {
-            if(!API_KEY) { toggleSettings(); return; }
-            if (isProcessing) return;
-            try { recognition.start(); } catch (e) { recognition.stop(); }
+        EL.mic.addEventListener('click', () => {
+            if(!API_KEY) return toggleSettings();
+            try { recognition.start(); tg.HapticFeedback.impactOccurred('medium'); } catch(e) { recognition.stop(); }
         });
 
-        // --- THE BRAIN (GEMINI PRO) ---
+        // --- BRAIN ---
         async function processAI(prompt) {
             isProcessing = true;
-            setVisualState('thinking');
+            EL.mic.classList.add('thinking');
             
-            // МОЩНЫЙ СИСТЕМНЫЙ ПРОМПТ
-            const systemContext = `You are J.A.R.V.I.S., Tony Stark's advanced AI.
-            RULES:
-            1. Answer in Russian.
-            2. Be capable, confident, slightly arrogant but extremely helpful.
-            3. IF asked for CODE: Provide clean, working code inside markdown blocks (\`\`\`language ... \`\`\`). Do not explain basic concepts unless asked.
-            4. IF asked for Presentation/Photos: Explain that as a terminal interface you cannot generate graphical files directly, but offer to generate the detailed structure/text/prompts for them.
-            5. Keep verbal responses concise, but code/structures detailed.`;
-            
-            const fullPrompt = `${systemContext}\n\nUSER REQUEST: ${prompt}`;
-
             try {
-                // Используем Gemini Pro для более сложных задач
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
+                // Используем самую стабильную модель: gemini-1.5-flash
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
                 
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] })
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: "Ты Джарвис. Ответь кратко на русском. Вопрос: " + prompt }] }]
+                    })
                 });
 
-                if(!response.ok) {
-                   if(response.status === 400) throw new Error("API KEY INVALID OR EXPIRED.");
-                   throw new Error("Connection to Stark Servers interrupted.");
+                const data = await response.json();
+
+                // === ОТЛАДКА ОШИБОК ===
+                if (data.error) {
+                    throw new Error(`Google Error: ${data.error.message} (Code: ${data.error.code})`);
+                }
+                
+                if (!data.candidates) {
+                    throw new Error("Пустой ответ от сервера. Возможно, VPN?");
                 }
 
-                const data = await response.json();
-                let answerMd = data.candidates[0].content.parts[0].text;
-                
-                // Рендерим Markdown в HTML (для красивого кода)
-                let answerHtml = marked.parse(answerMd);
+                const answerRaw = data.candidates[0].content.parts[0].text;
+                const answerHtml = marked.parse(answerRaw); // Красивый код
 
-                logHTML(answerHtml, "jarvis");
+                log(answerHtml, 'jarvis');
                 
-                // Для голоса чистим весь код и markdown
-                let speakableText = answerMd.replace(/```[\s\S]*?```/g, " [Code Block Generated] ").replace(/[\*#_\[\]]/g, '');
-                speak(speakableText.substring(0, 200)); // Говорим только начало, чтобы не бубнил долго
+                // Голос (без символов кода)
+                speak(answerRaw.replace(/[*#`]/g, ''));
 
             } catch (error) {
                 console.error(error);
-                logHTML(`SYSTEM FAILURE: ${error.message.toUpperCase()}`, "jarvis", true);
-                setVisualState('idle');
-                isProcessing = false;
+                // Показываем реальную ошибку пользователю
+                log(`СБОЙ: ${error.message}`, 'error');
                 tg.HapticFeedback.notificationOccurred('error');
+            } finally {
+                isProcessing = false;
+                EL.mic.classList.remove('thinking');
+                EL.mic.style.boxShadow = "";
             }
         }
 
-        // --- VOICE OUTPUT ---
         function speak(text) {
-            if (!window.speechSynthesis || text.length < 5) {
-                isProcessing = false; setVisualState('idle'); return;
-            }
+            if(!window.speechSynthesis) return;
             window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'ru-RU'; utterance.rate = 1.15; utterance.pitch = 0.85;
-            
-            const voices = window.speechSynthesis.getVoices();
-            const ruVoice = voices.find(v => v.lang.includes('ru') && !v.name.includes('Milena')); // Пытаемся найти более "мужской" системный голос если есть
-            if(ruVoice) utterance.voice = ruVoice;
-
-            utterance.onstart = () => { setVisualState('speaking'); tg.HapticFeedback.impactOccurred('heavy'); };
-            utterance.onend = utterance.onerror = () => { setVisualState('idle'); isProcessing = false; };
-            window.speechSynthesis.speak(utterance);
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = 'ru-RU';
+            window.speechSynthesis.speak(u);
         }
 
-        // --- VISUAL CORE ---
-        function setVisualState(state) {
-            const btn = ELEMENTS.micBtn;
-            const icon = ELEMENTS.micIcon;
-            btn.className = 'arc-reactor'; icon.className = 'fas';
-            if (state === 'idle') { icon.classList.add('fa-microphone'); }
-            else if (state === 'listening') { btn.classList.add('listening'); icon.classList.add('fa-wave-square'); }
-            else if (state === 'thinking') { btn.classList.add('thinking'); icon.classList.add('fa-atom'); tg.HapticFeedback.impactOccurred('light');}
-            else if (state === 'speaking') { btn.classList.add('speaking'); icon.classList.add('fa-microchip'); }
-        }
-
-        function logHTML(htmlContent, type, isError = false) {
+        function log(html, type) {
             const div = document.createElement('div');
             div.className = `msg ${type}`;
-            if(isError) div.style.borderColor = "var(--alert)";
-            div.innerHTML = htmlContent;
-            ELEMENTS.terminal.appendChild(div);
-            setTimeout(() => { ELEMENTS.terminal.scrollTop = ELEMENTS.terminal.scrollHeight; }, 100);
+            div.innerHTML = html;
+            EL.term.appendChild(div);
+            EL.term.scrollTop = EL.term.scrollHeight;
         }
 
         function toggleSettings() {
-            const isHidden = getComputedStyle(ELEMENTS.modal).display === 'none';
-            ELEMENTS.modal.style.display = isHidden ? 'flex' : 'none';
-            if(isHidden && API_KEY) ELEMENTS.keyInput.value = API_KEY;
+            EL.modal.style.display = (EL.modal.style.display === 'flex') ? 'none' : 'flex';
+            if(API_KEY) EL.input.value = API_KEY;
         }
 
         function saveSettings() {
-            const key = ELEMENTS.keyInput.value.trim();
-            if(key.length > 20 && key.startsWith('AIza')) {
-                API_KEY = key;
-                localStorage.setItem('jarvis_ultimate_key', API_KEY);
+            // Убрали строгую проверку, только тримминг пробелов
+            const rawKey = EL.input.value.trim();
+            if(rawKey.length > 10) {
+                API_KEY = rawKey;
+                localStorage.setItem('jarvis_fixed_key', API_KEY);
                 toggleSettings();
-                logHTML("POWER RESTORED. SYSTEMS ONLINE.", "jarvis");
-                tg.HapticFeedback.notificationOccurred('success');
+                log("Ключ сохранен. Пробую соединение...", "jarvis");
             } else {
-                tg.HapticFeedback.notificationOccurred('error');
-                alert("INVALID STARK INDUSTRIES KEY IDENTIFIED");
+                alert("Ключ слишком короткий!");
             }
         }
 
-        // Init procedures
-        window.speechSynthesis.onvoiceschanged = () => {};
-        if(!API_KEY) setTimeout(() => { toggleSettings(); }, 1000);
-        setVisualState('idle');
+        if(!API_KEY) toggleSettings();
 
     </script>
 </body>

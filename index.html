@@ -3,445 +3,742 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cyber Relics: System</title>
-    
+    <title>CaseBattle TWA</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700;900&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --bg-body: #050508;
-            --bg-card: #13131f;
-            --bg-glass: rgba(19, 19, 31, 0.95);
-            --primary: #00f3ff;
-            --secondary: #bc13fe;
-            --accent: #ff003c; /* Red for Admin */
+            --bg-body: #111115;
+            --bg-panel: #191921;
+            --bg-lighter: #22222b;
+            --accent-green: #00e065;
+            --accent-purple: #8b5cf6;
+            --accent-red: #ff445d;
+            --accent-gold: #fbbf24;
             --text-main: #ffffff;
-            --text-muted: #7d8ca3;
-            --gold: #ffaa00;
-            --nav-height: 75px;
-            --header-height: 60px;
+            --text-muted: #6b7280;
+            --rarity-blue: #3b82f6;
+            --rarity-purple: #8b5cf6;
+            --rarity-pink: #ec4899;
+            --rarity-red: #ef4444;
+            --rarity-gold: #fbbf24;
+            --nav-height: 70px;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; outline: none; user-select: none; }
         
         body {
             background-color: var(--bg-body);
             color: var(--text-main);
-            font-family: 'Inter', sans-serif;
-            overflow: hidden;
+            font-family: 'Exo 2', sans-serif;
             height: 100vh;
-            background-image: radial-gradient(circle at 50% 0%, rgba(0, 243, 255, 0.05) 0%, transparent 50%);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
-        .cyber-font { font-family: 'Orbitron', sans-serif; }
-        .hidden { display: none !important; }
-        .btn { border: none; outline: none; cursor: pointer; transition: 0.2s; }
+        /* --- LIVE DROP FEED (TOP BAR) --- */
+        .live-feed-container {
+            height: 60px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+            flex-shrink: 0;
+        }
+        .live-feed-track {
+            display: flex;
+            gap: 10px;
+            padding: 0 10px;
+            animation: scrollLeft 20s linear infinite;
+        }
+        @keyframes scrollLeft { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
         
-        /* --- LAYOUT --- */
-        #app { display: flex; flex-direction: column; height: 100%; }
+        .live-item {
+            min-width: 50px; height: 50px;
+            background: var(--bg-lighter);
+            border-radius: 4px;
+            position: relative;
+            display: flex; align-items: center; justify-content: center;
+            border-bottom: 2px solid;
+        }
+        .live-item img { width: 40px; }
 
         /* --- HEADER --- */
         header {
-            height: var(--header-height);
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 16px; background: var(--bg-glass);
-            border-bottom: 1px solid rgba(255,255,255,0.05); z-index: 100;
-        }
-        .app-logo { font-size: 18px; font-weight: 900; letter-spacing: 1px; }
-        .header-balance {
-            background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1);
-            padding: 5px 12px; border-radius: 20px; font-size: 13px;
-            display: flex; align-items: center; gap: 5px; cursor: pointer;
-        }
-
-        /* --- CONTENT --- */
-        .content-view {
-            flex: 1; overflow-y: auto; padding-bottom: calc(var(--nav-height) + 20px);
-            opacity: 0; animation: fadeIn 0.3s forwards; display: none;
-        }
-        .content-view.active { display: block; }
-        @keyframes fadeIn { to { opacity: 1; } }
-
-        /* --- ADMIN PANEL STYLES --- */
-        .admin-panel-card {
-            background: #1a0505; border: 1px solid var(--accent);
-            border-radius: 12px; padding: 15px; margin: 16px;
-            box-shadow: 0 0 15px rgba(255, 0, 60, 0.2);
-        }
-        .admin-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .admin-stat { background: rgba(255,0,60,0.1); padding: 10px; border-radius: 8px; text-align: center; }
-        .admin-input {
-            width: 100%; background: #000; border: 1px solid #333; color: var(--primary);
-            padding: 10px; border-radius: 6px; margin-bottom: 10px; font-family: 'Courier New', monospace;
-        }
-        .btn-admin {
-            width: 100%; padding: 10px; background: var(--accent); color: white;
-            font-weight: bold; border-radius: 6px; text-transform: uppercase;
-        }
-        .user-row {
+            padding: 10px 16px;
             display: flex; justify-content: space-between; align-items: center;
-            padding: 10px; border-bottom: 1px solid #333; font-size: 12px;
+            background: var(--bg-body);
+            z-index: 10;
+        }
+        .logo { font-weight: 900; font-size: 20px; text-transform: uppercase; letter-spacing: 1px; }
+        .logo span { color: var(--accent-green); }
+        
+        .balance-box {
+            background: rgba(0, 224, 101, 0.1);
+            color: var(--accent-green);
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 14px;
+            display: flex; align-items: center; gap: 6px;
+            cursor: pointer;
         }
 
-        /* --- OTHER STYLES (From previous req) --- */
-        .hero-banner {
-            position: relative; height: 300px;
-            background: url('https://img.freepik.com/free-photo/futuristic-city-with-neon-lights_23-2149089862.jpg') center/cover;
-            display: flex; align-items: center; justify-content: center; text-align: center;
+        /* --- MAIN CONTENT AREA --- */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 16px 100px;
+            position: relative;
         }
-        .cases-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px; }
+
+        /* --- GRID STYLES --- */
+        .section-title { font-size: 18px; font-weight: 800; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; text-transform: uppercase; }
+        .section-title::before { content: ''; width: 4px; height: 18px; background: var(--accent-green); display: block; }
+
+        .cases-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        
         .case-card {
-            background: var(--bg-card); border-radius: 16px; padding: 12px;
-            text-align: center; border: 1px solid rgba(255,255,255,0.05); position: relative;
+            background: var(--bg-panel);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            position: relative;
+            transition: transform 0.1s;
+            border: 1px solid rgba(255,255,255,0.02);
         }
-        .btn-main {
-            background: linear-gradient(90deg, #0066ff, var(--primary));
-            padding: 12px; width: 100%; border-radius: 10px; font-weight: 700; color: #000;
-        }
+        .case-card:active { transform: scale(0.97); }
+        .case-img { width: 100px; height: 100px; object-fit: contain; filter: drop-shadow(0 0 15px rgba(0,0,0,0.5)); margin-bottom: 10px; }
+        .case-name { font-weight: 700; font-size: 14px; margin-bottom: 5px; }
+        .case-price { font-weight: 600; color: var(--accent-green); font-size: 13px; }
 
-        /* --- NAV --- */
-        .bottom-nav {
-            height: var(--nav-height); background: #0a0a10;
-            border-top: 1px solid rgba(255,255,255,0.05);
+        /* --- ROULETTE (OPENING) --- */
+        .roulette-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(17, 17, 21, 0.98);
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .roulette-window {
+            width: 100%;
+            height: 120px;
+            background: #111;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 30px;
+            border-top: 2px solid var(--accent-gold);
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .roulette-indicator {
+            position: absolute; left: 50%; top: 0; bottom: 0; width: 4px;
+            background: var(--accent-gold);
+            z-index: 5;
+            transform: translateX(-50%);
+            box-shadow: 0 0 10px var(--accent-gold);
+        }
+        .roulette-strip {
+            display: flex;
+            height: 100%;
+            align-items: center;
+            will-change: transform;
+        }
+        .roulette-item {
+            min-width: 100px;
+            height: 100px;
+            margin: 0 5px;
+            background: var(--bg-lighter);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border-bottom: 3px solid transparent;
+        }
+        .roulette-item img { width: 60px; height: 60px; object-fit: contain; }
+
+        .win-modal {
+            text-align: center;
+            opacity: 0; transition: opacity 0.5s;
+        }
+        .win-item-img { width: 150px; height: 150px; margin-bottom: 20px; filter: drop-shadow(0 0 30px rgba(255,255,255,0.2)); }
+        .btn-action {
+            background: var(--accent-green);
+            color: #000;
+            border: none; padding: 12px 30px;
+            border-radius: 4px; font-weight: 800; text-transform: uppercase;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        .btn-sell { background: var(--accent-red); color: white; margin-left: 10px; }
+
+        /* --- BATTLES UI --- */
+        .battle-area { display: flex; gap: 10px; margin-top: 20px; }
+        .battle-column { flex: 1; background: var(--bg-panel); border-radius: 8px; padding: 10px; min-height: 200px; }
+        .battle-user { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #333; }
+        .battle-avatar { width: 30px; height: 30px; border-radius: 4px; background: #333; }
+        .battle-slot {
+            height: 80px; background: var(--bg-lighter); margin-bottom: 5px; border-radius: 4px;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0.5;
+        }
+        .battle-slot.active { opacity: 1; border: 1px solid var(--accent-green); }
+        .battle-slot.winner { border: 1px solid var(--accent-gold); box-shadow: inset 0 0 10px var(--accent-gold); }
+
+        /* --- UPGRADER UI --- */
+        .upgrade-circle-container {
+            width: 240px; height: 240px; margin: 40px auto;
+            position: relative;
+        }
+        .upgrade-svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+        .upgrade-bg-ring { stroke: #222; stroke-width: 10; fill: none; }
+        .upgrade-progress-ring {
+            stroke: var(--accent-green); stroke-width: 10; fill: none;
+            stroke-dasharray: 628; stroke-dashoffset: 628; /* 2 * PI * 100 */
+            transition: stroke-dashoffset 0.5s;
+        }
+        .upgrade-pointer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            transition: transform 3s cubic-bezier(0.1, 0.7, 0.1, 1);
+        }
+        .upgrade-pointer::before {
+            content: ''; position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+            width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 12px solid #fff;
+        }
+        .upgrade-controls { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
+        .chance-btn { background: var(--bg-lighter); padding: 8px 15px; border-radius: 4px; border: 1px solid #333; color: #fff; }
+        .chance-btn.active { border-color: var(--accent-green); color: var(--accent-green); }
+
+        /* --- NAV BAR --- */
+        .nav-bar {
+            height: var(--nav-height);
+            background: var(--bg-panel);
+            position: fixed; bottom: 0; width: 100%;
             display: flex; justify-content: space-around; align-items: center;
-            position: fixed; bottom: 0; width: 100%; z-index: 100;
-            padding-bottom: 10px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            z-index: 50;
         }
-        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-muted); font-size: 10px; width: 20%; opacity: 0.6; }
-        .nav-item.active { color: var(--primary); opacity: 1; }
-        .nav-item.active i { transform: translateY(-3px); text-shadow: 0 0 10px var(--primary); }
-        
-        .nav-item.center-btn .icon-wrap {
-            width: 45px; height: 45px; background: linear-gradient(135deg, var(--secondary), var(--primary));
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            color: var(--text-muted); font-size: 10px; font-weight: 700; width: 20%;
+        }
+        .nav-item i { font-size: 20px; margin-bottom: 2px; }
+        .nav-item.active { color: var(--accent-green); }
+        .nav-center {
+            width: 45px; height: 45px; background: var(--accent-green);
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.4); margin-bottom: -15px; border: 4px solid var(--bg-body);
+            margin-bottom: 20px; border: 4px solid var(--bg-body); color: #000;
+            box-shadow: 0 0 15px rgba(0, 224, 101, 0.4);
         }
-        .nav-item.center-btn i { color: #000; font-size: 20px; }
-        
-        /* Admin Button in Nav (Hidden by default) */
-        #nav-admin { display: none; }
-        #nav-admin.visible { display: flex; color: var(--accent); }
-        #nav-admin.active { color: var(--accent); text-shadow: 0 0 10px var(--accent); }
 
+        /* --- RARITY COLORS --- */
+        .rare-blue { border-color: var(--rarity-blue) !important; color: var(--rarity-blue); }
+        .rare-purple { border-color: var(--rarity-purple) !important; color: var(--rarity-purple); }
+        .rare-pink { border-color: var(--rarity-pink) !important; color: var(--rarity-pink); }
+        .rare-red { border-color: var(--rarity-red) !important; color: var(--rarity-red); }
+        .rare-gold { border-color: var(--rarity-gold) !important; color: var(--rarity-gold); }
+
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-<div id="app">
-    <header>
-        <div class="header-left" style="display:flex; align-items:center; gap:10px;">
-            <i class="fa-solid fa-bars" onclick="tg.showAlert('Menu is under construction')"></i>
-            <div class="app-logo"><span style="color:var(--secondary)">Cyber</span>Relics</div>
-        </div>
-        <div class="header-right" style="display:flex; align-items:center; gap:10px;">
-            <div class="header-balance" onclick="switchTab('profile')">
-                <i class="fa-solid fa-microchip" style="color: var(--gold);"></i> 
-                <span id="header-balance-val">0</span>
+    <div class="live-feed-container">
+        <div class="live-feed-track" id="live-feed">
             </div>
-            <img id="user-avatar" src="" style="width:32px; height:32px; border-radius:50%; border:1px solid var(--primary);" onclick="switchTab('profile')">
+    </div>
+
+    <header>
+        <div class="logo">CASE<span>BATTLE</span></div>
+        <div class="balance-box" onclick="addBalance()">
+            <span>$</span><span id="user-balance">0.00</span> <i class="fa-solid fa-plus-circle"></i>
         </div>
     </header>
 
-    <div id="main-container">
-        
-        <div id="view-cases" class="content-view active">
-            <div class="hero-banner">
-                <div style="position:absolute; inset:0; background:rgba(0,0,0,0.5);"></div>
-                <div style="position:relative; z-index:2; width:100%; padding:20px;">
-                    <div style="font-family:'Orbitron'; font-size:32px; line-height:1; margin-bottom:10px; text-shadow:0 0 10px var(--primary);">SEASON<br>BREACH</div>
-                    <button class="btn btn-main" style="width:60%;" onclick="openModal('season')">Open Pass</button>
-                </div>
+    <div id="view-home" class="content">
+        <div class="section-title">Официальные кейсы</div>
+        <div class="cases-grid" id="cases-list">
             </div>
-            
-            <div style="padding:16px;">
-                <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">AVAILABLE ARCHIVES</div>
-                <div class="cases-grid">
-                    <div class="case-card" onclick="tryBuyCase(250)">
-                        <img src="https://cdn-icons-png.flaticon.com/512/3062/3062634.png" style="width:70px; filter:hue-rotate(180deg);">
-                        <div class="cyber-font" style="font-size:12px; margin:5px 0;">Neon Ghost</div>
-                        <div style="font-weight:700; font-size:12px;">💠 250</div>
-                    </div>
-                    <div class="case-card" onclick="tryBuyCase(500)">
-                        <img src="https://cdn-icons-png.flaticon.com/512/9626/9626643.png" style="width:70px;">
-                        <div class="cyber-font" style="font-size:12px; margin:5px 0;">Cyber Core</div>
-                        <div style="font-weight:700; font-size:12px;">💠 500</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="view-upgrade" class="content-view">
-            <div style="padding:20px; text-align:center;">
-                <h2 class="cyber-font">UPGRADE STATION</h2>
-                <div style="width:200px; height:200px; border-radius:50%; border:2px dashed var(--secondary); margin:40px auto; display:flex; align-items:center; justify-content:center;">
-                    <i class="fa-solid fa-bolt" style="font-size:50px; color:#333;"></i>
-                </div>
-                <button class="btn btn-main" onclick="tg.showAlert('Select an item from inventory first')">Select Item</button>
-            </div>
-        </div>
-
-        <div id="view-crafts" class="content-view">
-            <div style="padding:16px;">
-                <h2 class="cyber-font" style="text-align:center; margin-bottom:20px;">SYNTHESIS</h2>
-                <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:8px;">
-                    <script>
-                        for(let i=1; i<=10; i++) document.write(`<div style="aspect-ratio:1; background:#111; border:1px solid #333; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#444;">${i}</div>`);
-                    </script>
-                </div>
-            </div>
-        </div>
-
-        <div id="view-profile" class="content-view">
-            <div style="text-align:center; padding:30px 0; background:linear-gradient(to bottom, rgba(0,243,255,0.1), transparent);">
-                <img id="profile-avatar-xl" src="" style="width:80px; height:80px; border-radius:50%; border:3px solid var(--primary); box-shadow:0 0 15px var(--primary);">
-                <h2 id="profile-name" style="margin-top:10px;">User</h2>
-                <div id="profile-id" style="font-size:11px; color:var(--text-muted);">ID: Loading...</div>
-            </div>
-            
-            <div style="background:var(--bg-card); margin:16px; padding:15px; border-radius:12px; display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <div style="font-size:11px; color:var(--text-muted);">Balance</div>
-                    <div style="font-size:20px; font-weight:700; color:var(--primary);">💠 <span id="profile-balance">0</span></div>
-                </div>
-                <button class="btn" style="background:rgba(255,255,255,0.1); padding:8px 15px; border-radius:6px; color:white;">Top Up</button>
-            </div>
-        </div>
-
-        <div id="view-admin" class="content-view">
-            <div style="padding:16px;">
-                <h2 class="cyber-font" style="color:var(--accent); text-align:center; margin-bottom:10px;">SYSTEM ROOT ACCESS</h2>
-                <div style="text-align:center; font-size:10px; color:#555; margin-bottom:20px;">TERMINAL v.2.0.4 | ID: 1017573139</div>
-
-                <div class="admin-stat-grid">
-                    <div class="admin-stat">
-                        <div style="font-size:20px; font-weight:bold;">12,405</div>
-                        <div style="font-size:10px;">TOTAL USERS</div>
-                    </div>
-                    <div class="admin-stat">
-                        <div style="font-size:20px; font-weight:bold;">$45k</div>
-                        <div style="font-size:10px;">REVENUE</div>
-                    </div>
-                </div>
-
-                <div class="admin-panel-card">
-                    <h3 style="margin-bottom:10px; font-size:14px;">God Mode: Balance</h3>
-                    <input type="number" id="admin-amount" class="admin-input" placeholder="Amount (e.g. 1000)">
-                    <div style="display:flex; gap:10px;">
-                        <button class="btn-admin" onclick="adminAction('add_balance')">Add 💠</button>
-                        <button class="btn-admin" style="background:#333;" onclick="adminAction('set_balance')">Set 💠</button>
-                    </div>
-                </div>
-
-                <div class="admin-panel-card">
-                    <h3 style="margin-bottom:10px; font-size:14px;">User Control</h3>
-                    <div style="max-height:150px; overflow-y:auto; border:1px solid #333; border-radius:6px; margin-bottom:10px;">
-                        <div class="user-row">
-                            <span style="color:var(--primary);">@current_user</span>
-                            <span style="color:var(--accent);">[ONLINE]</span>
-                        </div>
-                        <div class="user-row">
-                            <span>@neo_runner</span>
-                            <button style="border:none; background:none; color:red;">[BAN]</button>
-                        </div>
-                        <div class="user-row">
-                            <span>@cyber_punk</span>
-                            <button style="border:none; background:none; color:red;">[BAN]</button>
-                        </div>
-                    </div>
-                    <button class="btn-admin" style="background:var(--secondary);" onclick="tg.showAlert('Broadcast sent to 12,405 users')">📢 Send Broadcast</button>
-                </div>
-            </div>
-        </div>
-
     </div>
 
-    <nav class="bottom-nav">
-        <div class="nav-item" onclick="switchTab('upgrade')"><i class="fa-solid fa-arrow-up-from-bracket"></i></div>
-        <div class="nav-item" onclick="switchTab('crafts')"><i class="fa-solid fa-screwdriver-wrench"></i></div>
-        <div class="nav-item center-btn" onclick="switchTab('cases')">
-            <div class="icon-wrap"><i class="fa-solid fa-cube"></i></div>
+    <div id="view-battles" class="content hidden">
+        <div class="section-title">Case Battles</div>
+        <div style="background: var(--bg-panel); padding: 20px; border-radius: 8px; text-align: center;">
+            <p style="color: #aaa; margin-bottom: 15px;">Создай битву или присоединись к боту</p>
+            <button class="btn-action" onclick="startBotBattle()">Создать 1v1 с Ботом ($50)</button>
         </div>
-        <div class="nav-item" onclick="switchTab('profile')"><i class="fa-regular fa-user"></i></div>
         
-        <div id="nav-admin" class="nav-item" onclick="switchTab('admin')">
-            <i class="fa-solid fa-user-secret"></i>
+        <div id="battle-ui" class="hidden">
+            <div class="battle-area">
+                <div class="battle-column" id="battle-col-user">
+                    <div class="battle-user">
+                        <div class="battle-avatar" style="background: var(--accent-green)"></div>
+                        <div style="font-size: 12px; font-weight: bold;">YOU</div>
+                        <div style="margin-left: auto; color: var(--accent-green); font-weight: bold;" id="battle-total-user">$0</div>
+                    </div>
+                    </div>
+                <div class="battle-column" id="battle-col-bot">
+                    <div class="battle-user">
+                        <div class="battle-avatar" style="background: var(--accent-purple)"></div>
+                        <div style="font-size: 12px; font-weight: bold;">BOT</div>
+                        <div style="margin-left: auto; color: var(--accent-purple); font-weight: bold;" id="battle-total-bot">$0</div>
+                    </div>
+                    </div>
+            </div>
+            <div style="text-align: center; margin-top: 15px; font-weight: 800; font-size: 20px;" id="battle-result"></div>
+        </div>
+    </div>
+
+    <div id="view-upgrade" class="content hidden">
+        <div class="section-title">Upgrader</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div style="text-align: center; flex: 1;">
+                <div style="font-size: 12px; color: #777;">ВАША СТАВКА</div>
+                <div style="font-size: 18px; font-weight: bold;" id="upgrade-bet-amount">$0</div>
+                <button class="chance-btn" style="margin-top: 5px; font-size: 10px;" onclick="selectItemForUpgrade()">Выбрать</button>
+            </div>
+            <div style="font-size: 20px; color: #555;">➜</div>
+            <div style="text-align: center; flex: 1;">
+                <div style="font-size: 12px; color: #777;">ВЫИГРЫШ</div>
+                <div style="font-size: 18px; font-weight: bold; color: var(--accent-green);" id="upgrade-win-amount">$0</div>
+            </div>
+        </div>
+
+        <div class="upgrade-circle-container">
+            <svg class="upgrade-svg">
+                <circle class="upgrade-bg-ring" cx="120" cy="120" r="100"></circle>
+                <circle class="upgrade-progress-ring" id="upgrade-ring" cx="120" cy="120" r="100"></circle>
+            </svg>
+            <div class="upgrade-pointer" id="upgrade-pointer"></div>
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                <div style="font-size: 24px; font-weight: 900;" id="upgrade-chance-display">50%</div>
+            </div>
+        </div>
+
+        <div class="upgrade-controls">
+            <button class="chance-btn" onclick="setUpgradeMode(1.5)">x1.5</button>
+            <button class="chance-btn active" onclick="setUpgradeMode(2)">x2</button>
+            <button class="chance-btn" onclick="setUpgradeMode(5)">x5</button>
+            <button class="chance-btn" onclick="setUpgradeMode(10)">x10</button>
+        </div>
+
+        <button class="btn-action" style="width: 100%; margin-top: 20px;" onclick="runUpgrade()">UPGRADE</button>
+    </div>
+
+    <div id="view-profile" class="content hidden">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <div style="width: 80px; height: 80px; background: #333; border-radius: 50%; margin: 0 auto 10px; border: 2px solid var(--accent-green);">
+                <img id="profile-pic" src="" style="width: 100%; height: 100%; border-radius: 50%;">
+            </div>
+            <h2 id="profile-name">User</h2>
+            <div style="color: #777; font-size: 12px;">Steam ID: 76561198...</div>
+        </div>
+
+        <div class="section-title">Инвентарь</div>
+        <div class="cases-grid" id="inventory-list" style="grid-template-columns: repeat(3, 1fr); gap: 8px;">
+            </div>
+        <div id="empty-inventory" style="text-align: center; color: #555; margin-top: 20px;">Инвентарь пуст</div>
+    </div>
+
+    <div class="roulette-container" id="roulette-modal">
+        <div class="roulette-window">
+            <div class="roulette-indicator"></div>
+            <div class="roulette-strip" id="roulette-strip"></div>
+        </div>
+        <div class="win-modal" id="win-display">
+            <div style="font-size: 18px; color: #fff; margin-bottom: 10px;">ВЫПАЛ ПРЕДМЕТ</div>
+            <img src="" class="win-item-img" id="win-img">
+            <div style="font-size: 20px; font-weight: 800; text-transform: uppercase;" id="win-name">AK-47 | ASIIMOV</div>
+            <div style="color: var(--accent-green); font-weight: 700; margin-bottom: 20px;" id="win-price">$45.00</div>
+            
+            <button class="btn-action" onclick="closeRoulette()">В ИНВЕНТАРЬ</button>
+            <button class="btn-action btn-sell" onclick="sellWin()">ПРОДАТЬ</button>
+        </div>
+    </div>
+
+    <nav class="nav-bar">
+        <div class="nav-item active" onclick="switchTab('home', this)">
+            <i class="fa-solid fa-box-open"></i>
+            <span>Cases</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('battles', this)">
+            <i class="fa-solid fa-swords"></i>
+            <span>Battles</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('upgrade', this)">
+            <div class="nav-center"><i class="fa-solid fa-arrow-up"></i></div>
+        </div>
+        <div class="nav-item" onclick="switchTab('profile', this)">
+            <i class="fa-solid fa-user"></i>
+            <span>Profile</span>
         </div>
     </nav>
-</div>
 
-<script>
-    // --- CONFIGURATION ---
-    const ADMIN_ID = 1017573139; // ID Админа
-    const tg = window.Telegram.WebApp;
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+        tg.setHeaderColor('#111115');
 
-    // Инициализация Web App
-    tg.ready();
-    tg.expand();
-    tg.setHeaderColor('#13131f');
-    tg.setBackgroundColor('#050508');
+        // --- DATA ---
+        let balance = 200.00;
+        let inventory = [];
+        let upgradeMultiplier = 2;
+        let selectedInventoryItem = null;
 
-    // --- STATE MANAGEMENT (Local Storage) ---
-    let appState = {
-        balance: 0,
-        inventory: []
-    };
+        const skinsData = [
+            { id: 1, name: "AK-47 | Asiimov", price: 45.00, img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV092lnYmGm_PLP7LWnn8f65dw3OyS942l3AGy80s4ZDygJOSWclQ3Ml_Q-lO8xua-jJK0uJvKz3Jj6yRz4i7D30vgF82Fm4E/360fx360f", rarity: "rare-red" },
+            { id: 2, name: "AWP | Dragon Lore", price: 1500.00, img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJD_9W7m5a0mvLwOq7cQFQq78dy27iR9tWmiQPj_0U9YmGid9eSI1c7MFvW_we6w-q618S575XAnCRj6yBw4X-OmAv330-J8wytYA/360fx360f", rarity: "rare-gold" },
+            { id: 3, name: "M4A4 | Howl", price: 2000.00, img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-6kejhz2v_Nfz5H_uO1gb-Gw_alIImJwlRc7cF4n-SPpI-i3Aew_0o5YT2iJNfHclM5YQzU_gK7wO7mg8C0u5rKzCdg7yYk5XfUmEeyhQYMMLIki7Zt0g/360fx360f", rarity: "rare-red" },
+            { id: 4, name: "Glock-18 | Fade", price: 800.00, img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgposbaqKAxf0v73efTH9eO7fYK0m_7zO6-fz2oI7pEjiLjHpo6n3g3t_kFtYTz1I46UJAQ-Y13Xq1Xvxe_v0cW5vJzJmnR9-n51-q3gWvI/360fx360f", rarity: "rare-pink" },
+            { id: 5, name: "USP-S | Neo-Noir", price: 30.00, img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpoo6m1FBRp3_bGcjhQ09-jq5WYh8j_OrfdqWhe5sN4mTEyT48t2r2xK60x2Q/360fx360f", rarity: "rare-pink" },
+            { id: 6, name: "P250 | Sand Dune", price: 0.03, img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpopujwezhz3fzcdD5D09Lhh5O0h_L4PbzXmG9u5Mx2gv2P9I_zj126lBE9YmD0LI6QJgI4M1rR_VG6w-a70Z606pydwXsw7iInt33UgVXp1iE6l2r4/360fx360f", rarity: "rare-blue" },
+            { id: 7, name: "AWP | Worm God", price: 2.50, img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJU5cy4gYyaqPjxhFlc5cN5t-rN_Iv9nB21rxFqY2r7coKRIFQ9ZgvU-1Pox-fv1p68u5mfmHsy6Sgg-z-DyIVN_-M0/360fx360f", rarity: "rare-purple" }
+        ];
 
-    // Загрузка данных
-    function loadState() {
-        const saved = localStorage.getItem('cyberRelicsData');
-        if (saved) {
-            appState = JSON.parse(saved);
-        } else {
-            appState.balance = 100; // Стартовый бонус
-            saveState();
-        }
-        updateUI();
-    }
+        const cases = [
+            { id: 1, name: "Bum Case", price: 5.00, img: "https://cdn-icons-png.flaticon.com/512/9329/9329199.png", pool: [6, 7, 5] },
+            { id: 2, name: "Covert Case", price: 60.00, img: "https://cdn-icons-png.flaticon.com/512/3062/3062634.png", pool: [1, 5, 4, 1] },
+            { id: 3, name: "Rich Guy", price: 300.00, img: "https://cdn-icons-png.flaticon.com/512/644/644667.png", pool: [4, 2, 3] }
+        ];
 
-    function saveState() {
-        localStorage.setItem('cyberRelicsData', JSON.stringify(appState));
-        updateUI();
-    }
-
-    function updateUI() {
-        // Обновление всех счетчиков баланса
-        document.getElementById('header-balance-val').innerText = appState.balance;
-        document.getElementById('profile-balance').innerText = appState.balance;
-    }
-
-    // --- USER LOGIC ---
-    let currentUser = null;
-
-    function initUser() {
-        // Берем данные из телеграм
-        const user = tg.initDataUnsafe.user;
-        
-        const avatarEl = document.getElementById('user-avatar');
-        const avatarXl = document.getElementById('profile-avatar-xl');
-        const nameEl = document.getElementById('profile-name');
-        const idEl = document.getElementById('profile-id');
-
-        if (user) {
-            currentUser = user;
-            // Установка данных
-            if(user.photo_url) {
-                avatarEl.src = user.photo_url;
-                avatarXl.src = user.photo_url;
-            } else {
-                avatarEl.src = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
-                avatarXl.src = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
-            }
-            nameEl.innerText = user.first_name;
-            idEl.innerText = "ID: " + user.id;
-
-            // --- ПРОВЕРКА НА АДМИНА ---
-            if (user.id === ADMIN_ID) {
-                enableAdminMode();
-            }
-
-        } else {
-            // Демо режим (вне телеграма) - Для теста включим админку
-            // Чтобы протестировать вне телеграма, раскомментируйте строку ниже:
-            // enableAdminMode(); 
+        // --- INIT ---
+        function init() {
+            updateBalance();
+            renderCases();
+            renderLiveFeed();
             
-            nameEl.innerText = "Guest Runner";
-            idEl.innerText = "ID: Unknown";
-            avatarEl.src = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
-            avatarXl.src = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
-        }
-    }
-
-    function enableAdminMode() {
-        // Показываем кнопку в меню
-        const adminBtn = document.getElementById('nav-admin');
-        adminBtn.classList.add('visible');
-        console.log("Admin privileges granted.");
-    }
-
-    // --- ADMIN ACTIONS ---
-    function adminAction(action) {
-        const input = document.getElementById('admin-amount');
-        const amount = parseInt(input.value);
-
-        if (isNaN(amount) && action !== 'ban') {
-            tg.showAlert("Введите число!");
-            return;
+            // User Data
+            const user = tg.initDataUnsafe.user;
+            document.getElementById('profile-name').innerText = user ? (user.first_name || 'User') : 'Guest';
+            document.getElementById('profile-pic').src = user?.photo_url || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
         }
 
-        if (action === 'add_balance') {
-            appState.balance += amount;
-            tg.showPopup({
-                title: 'System Override',
-                message: `Добавлено ${amount} NC на счет администратора.`,
-                buttons: [{type: 'ok'}]
-            });
-        } else if (action === 'set_balance') {
-            appState.balance = amount;
-            tg.showPopup({
-                title: 'System Override',
-                message: `Баланс установлен на ${amount} NC.`,
-                buttons: [{type: 'ok'}]
-            });
+        // --- CORE FUNCTIONS ---
+
+        function updateBalance() {
+            document.getElementById('user-balance').innerText = balance.toFixed(2);
         }
 
-        saveState();
-        input.value = '';
-    }
+        function addBalance() {
+            balance += 100;
+            updateBalance();
+            tg.showPopup({ title: 'System', message: 'Баланс пополнен на $100 (Demo)' });
+        }
 
-    // --- GAMEPLAY LOGIC ---
-    function tryBuyCase(price) {
-        if (appState.balance >= price) {
-            tg.showPopup({
-                title: 'Confirm Purchase',
-                message: `Decrypt archive for ${price} NC?`,
-                buttons: [
-                    {id: 'buy', type: 'default', text: 'Yes, Hack it'},
-                    {type: 'cancel'}
-                ]
-            }, (btnId) => {
-                if (btnId === 'buy') {
-                    appState.balance -= price;
-                    saveState();
-                    // Здесь должна быть анимация открытия
-                    tg.showPopup({title: 'Success', message: 'You found: Rare Component!'});
-                    if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+        function renderCases() {
+            const container = document.getElementById('cases-list');
+            container.innerHTML = cases.map(c => `
+                <div class="case-card" onclick="openCase(${c.id})">
+                    <img src="${c.img}" class="case-img">
+                    <div class="case-name">${c.name}</div>
+                    <div class="case-price">$${c.price.toFixed(2)}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderLiveFeed() {
+            const container = document.getElementById('live-feed');
+            // Duplicate items to fill scroll
+            for(let i=0; i<30; i++) {
+                const skin = skinsData[Math.floor(Math.random() * skinsData.length)];
+                const el = document.createElement('div');
+                el.className = `live-item ${skin.rarity}`;
+                el.innerHTML = `<img src="${skin.img}">`;
+                container.appendChild(el);
+            }
+        }
+
+        // --- ROULETTE LOGIC ---
+
+        function openCase(caseId) {
+            const caseObj = cases.find(c => c.id === caseId);
+            if(balance < caseObj.price) {
+                tg.showAlert('Недостаточно средств!');
+                return;
+            }
+
+            balance -= caseObj.price;
+            updateBalance();
+
+            const modal = document.getElementById('roulette-modal');
+            const strip = document.getElementById('roulette-strip');
+            const winDisplay = document.getElementById('win-display');
+            
+            modal.style.display = 'flex';
+            strip.style.transition = 'none';
+            strip.style.transform = 'translateX(0)';
+            winDisplay.style.opacity = '0';
+            winDisplay.style.pointerEvents = 'none';
+
+            // Generate Roulette Line
+            let items = [];
+            for(let i=0; i<50; i++) {
+                // Random item from pool
+                let sId = caseObj.pool[Math.floor(Math.random() * caseObj.pool.length)];
+                items.push(skinsData.find(s => s.id === sId));
+            }
+            
+            // Determine Winner (Item index ~45)
+            const winIndex = 45;
+            // Weighted random for winner could be here, for now just pool random
+            // Let's force a good item occasionally
+            
+            const html = items.map(item => `
+                <div class="roulette-item ${item.rarity}">
+                    <img src="${item.img}">
+                </div>
+            `).join('');
+            strip.innerHTML = html;
+
+            // Animate
+            setTimeout(() => {
+                const itemWidth = 110; // 100 + margin
+                const offset = -(winIndex * itemWidth) + (window.innerWidth / 2) - (itemWidth / 2);
+                // Randomize slightly within the card
+                const randomOffset = Math.floor(Math.random() * 80) - 40;
+                
+                strip.style.transition = 'transform 5s cubic-bezier(0.15, 0, 0, 1)'; // Fast start, slow end
+                strip.style.transform = `translateX(${offset + randomOffset}px)`;
+                
+                // Sound effect trigger here
+                if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+
+                setTimeout(() => {
+                    const wonItem = items[winIndex];
+                    showWin(wonItem);
+                }, 5000);
+            }, 100);
+        }
+
+        let currentWinItem = null;
+
+        function showWin(item) {
+            currentWinItem = item;
+            const winDisplay = document.getElementById('win-display');
+            document.getElementById('win-img').src = item.img;
+            document.getElementById('win-name').innerText = item.name;
+            document.getElementById('win-price').innerText = '$' + item.price.toFixed(2);
+            document.getElementById('win-price').className = item.rarity === 'rare-gold' || item.rarity === 'rare-red' ? 'rare-red' : '';
+            
+            winDisplay.style.pointerEvents = 'all';
+            winDisplay.style.opacity = '1';
+            
+            if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+        }
+
+        function closeRoulette() {
+            inventory.push(currentWinItem);
+            document.getElementById('roulette-modal').style.display = 'none';
+            updateInventoryUI();
+        }
+
+        function sellWin() {
+            balance += currentWinItem.price;
+            updateBalance();
+            document.getElementById('roulette-modal').style.display = 'none';
+            tg.showPopup({message: `Продано за $${currentWinItem.price}`});
+        }
+
+        // --- BATTLE LOGIC (SIMPLE 1v1 BOT) ---
+        
+        function startBotBattle() {
+            if(balance < 50) return tg.showAlert('Нужно $50 для битвы');
+            balance -= 50;
+            updateBalance();
+
+            const ui = document.getElementById('battle-ui');
+            ui.classList.remove('hidden');
+            
+            const userCol = document.getElementById('battle-col-user');
+            const botCol = document.getElementById('battle-col-bot');
+            
+            // Clear previous
+            while(userCol.children.length > 1) userCol.removeChild(userCol.lastChild);
+            while(botCol.children.length > 1) botCol.removeChild(botCol.lastChild);
+            
+            document.getElementById('battle-result').innerText = '';
+            document.getElementById('battle-total-user').innerText = '$0';
+            document.getElementById('battle-total-bot').innerText = '$0';
+
+            let round = 0;
+            let totalUser = 0;
+            let totalBot = 0;
+            const maxRounds = 5;
+
+            const interval = setInterval(() => {
+                round++;
+                
+                // Logic
+                const userDrop = skinsData[Math.floor(Math.random() * skinsData.length)];
+                const botDrop = skinsData[Math.floor(Math.random() * skinsData.length)];
+                
+                totalUser += userDrop.price;
+                totalBot += botDrop.price;
+
+                // Render slots
+                addBattleSlot(userCol, userDrop, userDrop.price > botDrop.price);
+                addBattleSlot(botCol, botDrop, botDrop.price > userDrop.price);
+                
+                document.getElementById('battle-total-user').innerText = '$' + totalUser.toFixed(2);
+                document.getElementById('battle-total-bot').innerText = '$' + totalBot.toFixed(2);
+                
+                if(tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+
+                if(round >= maxRounds) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        const win = totalUser > totalBot;
+                        const msg = win ? `YOU WON $${(totalUser+totalBot).toFixed(2)}` : 'YOU LOST';
+                        const el = document.getElementById('battle-result');
+                        el.innerText = msg;
+                        el.style.color = win ? 'var(--accent-green)' : 'var(--accent-red)';
+                        
+                        if(win) {
+                            balance += (totalUser + totalBot);
+                            updateBalance();
+                            tg.HapticFeedback.notificationOccurred('success');
+                        } else {
+                            tg.HapticFeedback.notificationOccurred('error');
+                        }
+                    }, 1000);
                 }
-            });
-        } else {
-            tg.showAlert("Insufficient Neural Chips. Visit Profile or Admin.");
-            if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+            }, 1500);
         }
-    }
 
-    // --- NAVIGATION LOGIC ---
-    function switchTab(tabName) {
-        document.querySelectorAll('.content-view').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        function addBattleSlot(col, item, isWinner) {
+            const div = document.createElement('div');
+            div.className = `battle-slot active ${isWinner ? 'winner' : ''}`;
+            div.innerHTML = `<img src="${item.img}" style="height:50px;">`;
+            col.appendChild(div);
+        }
 
-        const target = document.getElementById('view-' + tabName);
-        if(target) target.classList.add('active');
+        // --- UPGRADER LOGIC ---
 
-        // Подсветка иконок
-        const navs = document.querySelectorAll('.nav-item');
-        // Индексы: 0-Upgrade, 1-Craft, 2-Cases, 3-Profile, 4-Admin
-        if (tabName === 'upgrade') navs[0].classList.add('active');
-        if (tabName === 'crafts') navs[1].classList.add('active');
-        if (tabName === 'cases') navs[2].classList.add('active');
-        if (tabName === 'profile') navs[3].classList.add('active');
-        if (tabName === 'admin') navs[4].classList.add('active');
+        function setUpgradeMode(mult) {
+            upgradeMultiplier = mult;
+            document.querySelectorAll('.upgrade-controls button').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update UI Ring
+            const chance = (1 / mult) * 100 * 0.9; // House edge 10%
+            document.getElementById('upgrade-chance-display').innerText = chance.toFixed(1) + '%';
+            
+            // Stroke dasharray logic
+            // Max is 628. If chance is 50%, we need half circle.
+            const offset = 628 - (628 * (chance / 100));
+            document.getElementById('upgrade-ring').style.strokeDashoffset = offset;
+            
+            updateUpgradeWinAmt();
+        }
 
-        if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-    }
+        function selectItemForUpgrade() {
+            if(inventory.length === 0) return tg.showAlert('Инвентарь пуст');
+            // For demo, just pick first or random
+            selectedInventoryItem = inventory[0];
+            document.getElementById('upgrade-bet-amount').innerText = '$' + selectedInventoryItem.price.toFixed(2);
+            updateUpgradeWinAmt();
+        }
 
-    // --- BOOTSTRAP ---
-    loadState();
-    initUser();
+        function updateUpgradeWinAmt() {
+            if(!selectedInventoryItem) return;
+            const val = selectedInventoryItem.price * upgradeMultiplier;
+            document.getElementById('upgrade-win-amount').innerText = '$' + val.toFixed(2);
+        }
 
-</script>
+        function runUpgrade() {
+            if(!selectedInventoryItem) return tg.showAlert('Выберите предмет');
+            
+            // Remove item
+            const idx = inventory.indexOf(selectedInventoryItem);
+            inventory.splice(idx, 1);
+            updateInventoryUI();
+            
+            const pointer = document.getElementById('upgrade-pointer');
+            
+            // Random degree 0 to 360
+            // Winning zone depends on chance. 
+            // e.g. 50% chance = win if lands 0-180.
+            const chance = (1 / upgradeMultiplier) * 0.9;
+            const winAngleLimit = 360 * chance;
+            
+            // Cheat logic for demo: 50/50 real outcome
+            const isWin = Math.random() < chance;
+            
+            let landingAngle;
+            if(isWin) {
+                // Land inside win zone
+                landingAngle = Math.random() * winAngleLimit;
+            } else {
+                // Land outside
+                landingAngle = winAngleLimit + (Math.random() * (360 - winAngleLimit));
+            }
+            
+            // Add spins
+            const finalRotate = 1440 + landingAngle; // 4 spins
+            
+            pointer.style.transform = `rotate(${finalRotate}deg)`;
+            
+            setTimeout(() => {
+                if(isWin) {
+                    const newVal = selectedInventoryItem.price * upgradeMultiplier;
+                    balance += newVal; // Auto sell for simplicity in demo or give item
+                    updateBalance();
+                    tg.showPopup({title:'UPGRADE SUCCESS', message:`Вы получили $${newVal.toFixed(2)}`});
+                } else {
+                    tg.showPopup({title:'FAILED', message:'Предмет сгорел'});
+                }
+                
+                pointer.style.transition = 'none';
+                pointer.style.transform = 'rotate(0deg)';
+                setTimeout(() => { pointer.style.transition = 'transform 3s cubic-bezier(0.1, 0.7, 0.1, 1)'; }, 100);
+                
+                selectedInventoryItem = null;
+                document.getElementById('upgrade-bet-amount').innerText = '$0';
+            }, 3000);
+        }
+
+        // --- NAVIGATION & UTILS ---
+
+        function switchTab(tab, el) {
+            document.querySelectorAll('.content').forEach(c => c.classList.add('hidden'));
+            document.getElementById('view-' + tab).classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            if(el) el.classList.add('active');
+            
+            if(tab === 'profile') updateInventoryUI();
+        }
+
+        function updateInventoryUI() {
+            const list = document.getElementById('inventory-list');
+            const empty = document.getElementById('empty-inventory');
+            list.innerHTML = '';
+            
+            if(inventory.length === 0) {
+                empty.style.display = 'block';
+            } else {
+                empty.style.display = 'none';
+                inventory.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'case-card'; // Reuse style
+                    div.style.padding = '5px';
+                    div.innerHTML = `
+                        <div style="font-size:10px; text-align:right; color:var(--accent-green)">$${item.price}</div>
+                        <img src="${item.img}" style="width:50px; height:50px; object-fit:contain;">
+                        <div style="font-size:10px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">${item.name}</div>
+                    `;
+                    list.appendChild(div);
+                });
+            }
+        }
+
+        // Start
+        init();
+
+    </script>
 </body>
 </html>

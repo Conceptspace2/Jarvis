@@ -3,244 +3,201 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cyber Relics</title>
+    <title>Cyber Relics: Protocol</title>
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            /* Цветовая палитра Cyber Relics */
-            --bg-color: #050508;
-            --card-bg: #13131f;
-            --primary-neon: #00f3ff; /* Голубой неон */
-            --secondary-neon: #bc13fe; /* Фиолетовый неон */
+            --bg-dark: #050508;
+            --bg-panel: #13131f;
+            --primary: #00f3ff;
+            --primary-dim: rgba(0, 243, 255, 0.1);
+            --secondary: #bc13fe;
             --accent-red: #ff003c;
-            --text-color: #ffffff;
-            --text-secondary: #8b9bb4;
-            --nav-bg: #0f0f16;
+            --gold: #ffd700;
+            --text-main: #ffffff;
+            --text-muted: #8b9bb4;
             
-            /* Размеры */
-            --header-height: 60px;
-            --bottom-nav-height: 80px;
+            --rare-common: #a0a0a0;
+            --rare-rare: #00f3ff;
+            --rare-legendary: #ff003c;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            -webkit-tap-highlight-color: transparent;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
         body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
+            background-color: var(--bg-dark);
+            color: var(--text-main);
             font-family: 'Inter', sans-serif;
             overflow-x: hidden;
-            padding-bottom: calc(var(--bottom-nav-height) + 20px); /* Отступ для навбара */
+            padding-bottom: 90px;
+            /* Фон с сеткой */
+            background-image: 
+                linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
         }
 
-        /* --- HEADER --- */
+        /* --- UI COMPONENTS --- */
+        
+        /* Glitch Text Effect */
+        .glitch {
+            position: relative;
+            color: var(--text-main);
+        }
+        .glitch::before, .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0.8;
+        }
+        .glitch::before {
+            color: var(--secondary);
+            z-index: -1;
+            animation: glitch-anim-1 2s infinite linear alternate-reverse;
+        }
+        .glitch::after {
+            color: var(--primary);
+            z-index: -2;
+            animation: glitch-anim-2 2s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-anim-1 {
+            0% { clip-path: inset(20% 0 80% 0); transform: translate(-2px, 0); }
+            100% { clip-path: inset(60% 0 10% 0); transform: translate(2px, 0); }
+        }
+        @keyframes glitch-anim-2 {
+            0% { clip-path: inset(10% 0 60% 0); transform: translate(2px, 0); }
+            100% { clip-path: inset(80% 0 5% 0); transform: translate(-2px, 0); }
+        }
+
+        /* HEADER */
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 16px;
-            height: var(--header-height);
-            background: rgba(5, 5, 8, 0.9);
-            backdrop-filter: blur(10px);
+            padding: 12px 16px;
+            background: rgba(5, 5, 8, 0.85);
+            backdrop-filter: blur(12px);
             position: sticky;
             top: 0;
-            z-index: 100;
-            border-bottom: 1px solid rgba(0, 243, 255, 0.1);
+            z-index: 50;
+            border-bottom: 1px solid var(--primary-dim);
         }
 
-        .header-left {
+        .user-info {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
         }
 
-        .burger-icon {
-            font-size: 24px;
-            cursor: pointer;
+        .avatar-frame {
+            position: relative;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%; /* Круглый аватар по гайдлайнам Telegram */
+            padding: 2px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
         }
 
-        .logo-text {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 900;
-            color: var(--primary-neon);
-            letter-spacing: 1px;
-            font-size: 18px;
-        }
-
-        .header-center {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            font-family: 'Orbitron', sans-serif;
-            font-size: 14px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: white;
-            opacity: 0.9;
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .currency-badge {
-            display: flex;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 4px 8px 4px 4px;
-            gap: 6px;
-        }
-
-        .currency-icon {
-            font-size: 14px;
-        }
-
-        .currency-amount {
-            font-size: 12px;
-            font-weight: 700;
-        }
-
-        .add-btn {
-            background: var(--primary-neon);
-            color: #000;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 14px;
-            cursor: pointer;
-        }
-
-        .user-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: linear-gradient(45deg, var(--secondary-neon), var(--primary-neon));
-            border: 2px solid #fff;
-            overflow: hidden;
-        }
-        
-        .user-avatar img {
+        .avatar-img {
             width: 100%;
             height: 100%;
+            border-radius: 50%;
             object-fit: cover;
+            background: #000;
         }
 
-        /* --- HERO SECTION --- */
-        .hero-section {
+        .user-meta {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.1;
+        }
+
+        .user-name {
+            font-weight: 700;
+            font-size: 13px;
+            color: var(--text-main);
+        }
+
+        .user-status {
+            font-size: 10px;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .currency-display {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--primary-dim);
+            padding: 6px 12px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.1);
+        }
+
+        /* HERO */
+        .hero {
             position: relative;
-            width: 100%;
-            height: 280px;
+            height: 220px;
+            margin: 16px;
+            border-radius: 16px;
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
+            justify-content: flex-end;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        /* Фон - имитация киберпанк города через градиент и картинку */
         .hero-bg {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: url('https://images.unsplash.com/photo-1515630278258-407f66498911?q=80&w=1000&auto=format&fit=crop') center/cover no-repeat;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://img.freepik.com/free-photo/cyberpunk-city-street-night-with-neon-lights-futuristic-urban-landscape_1258-163884.jpg?t=st=1710000000~exp=1710003600~hmac=fake') center/cover;
+            filter: brightness(0.6);
             z-index: 1;
-        }
-
-        .hero-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(to bottom, rgba(5,5,8,0.3) 0%, rgba(5,5,8,0.8) 80%, var(--bg-color) 100%);
-            z-index: 2;
         }
 
         .hero-content {
             position: relative;
-            z-index: 3;
-            width: 100%;
-            padding: 0 20px;
-            animation: fadeIn 0.8s ease-out;
+            z-index: 2;
         }
 
-        .hero-title {
+        .hero h1 {
             font-family: 'Orbitron', sans-serif;
-            font-size: 32px;
-            font-weight: 900;
-            line-height: 1.1;
+            font-size: 28px;
             text-transform: uppercase;
-            margin-bottom: 16px;
-            color: #fff;
-            text-shadow: 0 0 10px var(--primary-neon), 0 0 20px var(--primary-neon);
-            transform: skew(-5deg);
+            margin-bottom: 8px;
+            line-height: 1;
         }
 
-        .hero-btn {
-            background: linear-gradient(90deg, var(--secondary-neon), #ff00de);
-            border: none;
-            padding: 12px 32px;
-            border-radius: 8px;
-            color: white;
+        /* GRID */
+        .section-title {
+            padding: 0 16px;
+            margin-bottom: 12px;
             font-family: 'Orbitron', sans-serif;
-            font-weight: 700;
-            font-size: 14px;
+            color: var(--text-muted);
+            font-size: 12px;
+            letter-spacing: 1px;
             text-transform: uppercase;
-            box-shadow: 0 0 15px rgba(188, 19, 254, 0.5);
-            cursor: pointer;
-            transition: transform 0.1s;
         }
 
-        .hero-btn:active {
-            transform: scale(0.95);
-        }
-
-        /* --- TEXT BLOCK --- */
-        .description-block {
-            padding: 10px 20px 24px;
-            text-align: center;
-        }
-
-        .description-text {
-            color: var(--text-secondary);
-            font-size: 14px;
-            line-height: 1.5;
-            max-width: 400px;
-            margin: 0 auto;
-        }
-
-        /* --- GRID SECTION --- */
-        .grid-container {
+        .grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
             padding: 0 16px;
         }
 
-        .card {
-            background: var(--card-bg);
+        .case-card {
+            background: var(--bg-panel);
             border-radius: 12px;
             padding: 12px;
             display: flex;
@@ -248,317 +205,378 @@
             align-items: center;
             border: 1px solid rgba(255, 255, 255, 0.05);
             position: relative;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
         }
 
-        /* Эффект свечения границы при наведении/активности */
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: var(--primary-neon);
-            opacity: 0.5;
-            box-shadow: 0 0 10px var(--primary-neon);
-        }
-        
-        .card:nth-child(2)::before {
-            background: var(--accent-red);
-            box-shadow: 0 0 10px var(--accent-red);
+        .case-card:active { transform: scale(0.98); }
+
+        .case-card.rare { border-color: rgba(188, 19, 254, 0.3); }
+        .case-card.rare::before {
+            content: ''; position: absolute; top: -1px; left: 0; width: 100%; height: 2px;
+            background: var(--secondary); box-shadow: 0 0 15px var(--secondary);
         }
 
-        .badge {
-            position: absolute;
-            top: 10px;
-            right: 0;
-            background: linear-gradient(90deg, #2b2b3d, #3e3e5e);
-            color: #fff;
-            font-size: 10px;
-            padding: 4px 8px;
-            border-radius: 4px 0 0 4px;
-            font-weight: 600;
-            text-transform: uppercase;
-            z-index: 10;
-        }
-        
-        .badge.purple { background: linear-gradient(90deg, #5a1a7a, #bc13fe); }
-        .badge.red { background: linear-gradient(90deg, #7a1a1a, #ff003c); }
-
-        .card-image-wrapper {
-            width: 100%;
+        .case-img {
+            width: 100px;
             height: 100px;
-            margin-top: 15px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .card-image {
-            width: 80px;
-            height: 80px;
             object-fit: contain;
-            filter: drop-shadow(0 0 8px rgba(255,255,255,0.4));
+            margin: 10px 0;
+            filter: drop-shadow(0 0 10px rgba(0,0,0,0.5));
+            transition: filter 0.3s;
+        }
+        
+        .case-card:hover .case-img {
+            filter: drop-shadow(0 0 15px var(--primary));
         }
 
-        .card-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 13px;
-            margin-bottom: 12px;
-            text-align: center;
-            color: #e0e0e0;
-        }
-
-        .price-btn {
+        .btn-buy {
             width: 100%;
-            padding: 8px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 10px;
             border-radius: 8px;
-            color: var(--text-color);
-            display: flex;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: auto;
+        }
+
+        /* --- MODAL / OPENING ANIMATION --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            display: none; /* Flex when active */
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 6px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
+            opacity: 0;
+            transition: opacity 0.3s;
         }
 
-        .price-btn:active {
-            background: rgba(255, 255, 255, 0.15);
+        .modal-content {
+            text-align: center;
+            width: 100%;
+            position: relative;
         }
 
-        .price-icon {
+        /* Анимация тряски кейса */
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+
+        .shaking-element {
+            animation: shake 0.5s;
+            animation-iteration-count: infinite;
+        }
+
+        .terminal-text {
+            font-family: 'Courier New', monospace;
+            color: var(--primary);
+            margin-bottom: 20px;
+            min-height: 20px;
             font-size: 14px;
         }
 
-        /* --- BOTTOM NAVIGATION --- */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: var(--bottom-nav-height);
-            background: #0b0b12;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end; /* Выравнивание по низу */
-            padding: 0 16px 15px 16px; /* Отступ снизу для безопасной зоны */
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            z-index: 200;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
-        }
-
-        .nav-item {
-            display: flex;
+        /* Анимация выпадения предмета */
+        .reward-container {
+            display: none;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
-            color: #58586a;
-            font-size: 10px;
-            cursor: pointer;
-            transition: color 0.3s;
-            width: 18%; /* Равномерное распределение */
+            animation: zoomIn 0.5s ease-out;
         }
 
-        .nav-icon {
-            font-size: 22px;
-            transition: transform 0.2s;
+        @keyframes zoomIn {
+            0% { transform: scale(0); opacity: 0; }
+            70% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
         }
 
-        .nav-text {
-            font-weight: 500;
+        .god-rays {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px; height: 300px;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(0,0,0,0) 70%);
+            z-index: -1;
+            animation: rotate 10s linear infinite;
         }
 
-        /* Активное состояние */
-        .nav-item.active {
-            color: var(--primary-neon);
+        @keyframes rotate { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+
+        .reward-img {
+            width: 140px;
+            height: 140px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 20px var(--primary));
+            margin-bottom: 20px;
         }
         
-        .nav-item.active .nav-icon {
-            filter: drop-shadow(0 0 5px var(--primary-neon));
+        /* Стилизация редкости */
+        .rarity-legendary img { filter: drop-shadow(0 0 25px var(--accent-red)); }
+        .rarity-legendary h2 { color: var(--accent-red); text-shadow: 0 0 10px var(--accent-red); }
+        
+        .rarity-rare img { filter: drop-shadow(0 0 25px var(--secondary)); }
+        .rarity-rare h2 { color: var(--secondary); text-shadow: 0 0 10px var(--secondary); }
+
+        .btn-claim {
+            background: linear-gradient(90deg, var(--primary), #00aaff);
+            border: none;
+            padding: 14px 40px;
+            color: #000;
+            font-weight: 800;
+            font-family: 'Orbitron';
+            border-radius: 30px;
+            margin-top: 20px;
+            text-transform: uppercase;
+            box-shadow: 0 0 20px var(--primary);
+            animation: pulse 2s infinite;
         }
 
-        /* Центральная кнопка (Архив) */
-        .nav-item.center-btn {
-            position: relative;
-            bottom: 10px; /* Приподнять */
-        }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(0, 243, 255, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(0, 243, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 243, 255, 0); } }
 
-        .nav-item.center-btn .icon-wrapper {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, #1c1c2e, #2a2a40);
-            border-radius: 12px;
+        /* BOTTOM NAV */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0; width: 100%;
+            background: #0f0f16;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
-            transition: all 0.3s;
+            justify-content: space-around;
+            padding: 12px 0 20px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            z-index: 90;
         }
-
-        .nav-item.center-btn.active .icon-wrapper {
-            background: linear-gradient(135deg, #0055ff, var(--primary-neon));
-            box-shadow: 0 0 15px var(--primary-neon);
-            border-color: transparent;
-        }
-        
-        .nav-item.center-btn.active {
-            color: #fff;
-        }
-
-        .nav-item.center-btn .nav-icon {
-            font-size: 24px;
-            color: #fff;
-        }
-
-        /* Анимации */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .nav-item { opacity: 0.5; transition: 0.3s; text-align: center; font-size: 24px; }
+        .nav-item.active { opacity: 1; color: var(--primary); transform: translateY(-5px); }
 
     </style>
 </head>
 <body>
 
     <header>
-        <div class="header-left">
-            <div class="burger-icon" onclick="console.log('Menu clicked')">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        <div class="user-info">
+            <div class="avatar-frame">
+                <img id="user-avatar" src="https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png" class="avatar-img" alt="Avatar">
             </div>
-            <div class="logo-text">CR</div>
+            <div class="user-meta">
+                <span id="user-name" class="user-name">Guest</span>
+                <span class="user-status">Netrunner</span>
+            </div>
         </div>
-
-        <div class="header-center">Cyber Relics</div>
-
-        <div class="header-right">
-            <div class="currency-badge">
-                <span class="currency-icon">💠</span>
-                <span class="currency-amount">250 NC</span>
-                <div class="add-btn" onclick="showAlert('Покупка валюты недоступна')">+</div>
-            </div>
-            <div class="user-avatar" onclick="showAlert('Профиль пользователя')">
-                <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100" alt="User">
-            </div>
+        <div class="currency-display">
+            <span>💠</span>
+            <span id="balance">2450</span>
         </div>
     </header>
 
-    <main>
-        <section class="hero-section">
+    <div class="scroll-content">
+        <div class="hero">
             <div class="hero-bg"></div>
-            <div class="hero-overlay"></div>
             <div class="hero-content">
-                <h1 class="hero-title">СЕЗОН<br>ВЗЛОМА</h1>
-                <button class="hero-btn" onclick="showAlert('Запуск протокола взлома...')">Начать протокол</button>
+                <h1 class="glitch" data-text="SEASON: BREACH">SEASON:<br>BREACH</h1>
+                <p style="color: #ccc; font-size: 12px; max-width: 70%;">Новые протоколы шифрования взломаны. Доступны архивы S-класса.</p>
             </div>
-        </section>
-
-        <div class="description-block">
-            <p class="description-text">Вскрывай защищенные архивы и находи легендарные цифровые артефакты старой сети.</p>
         </div>
 
-        <section class="grid-container">
-            <div class="card">
-                <div class="badge purple">+20% XP</div>
-                <div class="card-image-wrapper">
-                    <img src="https://cdn-icons-png.flaticon.com/512/3062/3062634.png" class="card-image" style="filter: hue-rotate(180deg) drop-shadow(0 0 5px cyan);" alt="Helmet">
-                </div>
-                <div class="card-title">Неоновый Призрак</div>
-                <button class="price-btn" onclick="showAlert('Куплено: Неоновый Призрак')">
-                    <span class="price-icon">💠</span> 500 NC
-                </button>
+        <div class="section-title">Доступные архивы</div>
+        
+        <div class="grid">
+            <div class="case-card" onclick="openCase('standard')">
+                <div style="font-size: 10px; color: var(--primary); align-self: flex-end;">COMMON</div>
+                <img src="https://cdn-icons-png.flaticon.com/512/9329/9329199.png" class="case-img" alt="Case">
+                <div style="font-family: 'Orbitron'; font-size: 14px; margin-bottom: 5px;">Data Box</div>
+                <button class="btn-buy">💠 100 OPEN</button>
             </div>
 
-            <div class="card">
-                <div class="badge red">Rare Drop</div>
-                <div class="card-image-wrapper">
-                    <img src="https://cdn-icons-png.flaticon.com/512/644/644667.png" class="card-image" style="filter: sepia(1) saturate(5) hue-rotate(-50deg) drop-shadow(0 0 5px red);" alt="Cube">
-                </div>
-                <div class="card-title">Ядро Системы</div>
-                <button class="price-btn" onclick="showAlert('Недостаточно средств')">
-                    <span class="price-icon">💠</span> 1200 NC
-                </button>
+            <div class="case-card rare" onclick="openCase('elite')">
+                <div style="font-size: 10px; color: var(--secondary); align-self: flex-end;">ELITE</div>
+                <img src="https://cdn-icons-png.flaticon.com/512/9626/9626643.png" class="case-img" style="filter: hue-rotate(45deg) drop-shadow(0 0 5px purple);" alt="Case">
+                <div style="font-family: 'Orbitron'; font-size: 14px; margin-bottom: 5px;">Neon Cache</div>
+                <button class="btn-buy" style="border-color: var(--secondary); color: var(--secondary);">💠 500 OPEN</button>
             </div>
-        </section>
-    </main>
+        </div>
+    </div>
+
+    <div id="opening-modal" class="modal-overlay">
+        
+        <div id="phase-opening" class="modal-content">
+            <div id="terminal-log" class="terminal-text">Connecting to secure server...</div>
+            <img id="anim-case-img" src="https://cdn-icons-png.flaticon.com/512/9626/9626643.png" class="case-img shaking-element" style="width: 180px; height: 180px;">
+            <div style="margin-top: 20px; width: 200px; height: 4px; background: #333; margin-left: auto; margin-right: auto; border-radius: 2px; overflow: hidden;">
+                <div id="progress-bar" style="width: 0%; height: 100%; background: var(--primary); transition: width 0.1s;"></div>
+            </div>
+        </div>
+
+        <div id="phase-reward" class="modal-content reward-container">
+            <div class="god-rays"></div>
+            <div style="font-family: 'Orbitron'; color: #fff; margin-bottom: 10px; opacity: 0.7;">ВЗЛОМ УСПЕШЕН</div>
+            
+            <img id="reward-img" src="" class="reward-img">
+            
+            <h2 id="reward-name" style="font-family: 'Orbitron'; font-size: 24px; text-transform: uppercase; margin-bottom: 5px;">ITEM NAME</h2>
+            <div id="reward-rarity" style="font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px;">LEGENDARY</div>
+            
+            <button class="btn-claim" onclick="closeModal()">ЗАБРАТЬ</button>
+        </div>
+    </div>
 
     <nav class="bottom-nav">
-        <div class="nav-item active" onclick="switchTab(this)">
-            <div class="nav-icon">💻</div>
-            <div class="nav-text">Терминал</div>
-        </div>
-        <div class="nav-item" onclick="switchTab(this)">
-            <div class="nav-icon">🎯</div>
-            <div class="nav-text">Синтез</div>
-        </div>
-        <div class="nav-item center-btn" onclick="switchTab(this)">
-            <div class="icon-wrapper">
-                <div class="nav-icon">📦</div>
-            </div>
-            <div class="nav-text">Архив</div>
-        </div>
-        <div class="nav-item" onclick="switchTab(this)">
-            <div class="nav-icon">🎁</div>
-            <div class="nav-text">Рынок</div>
-        </div>
-        <div class="nav-item" onclick="switchTab(this)">
-            <div class="nav-icon">👤</div>
-            <div class="nav-text">Профиль</div>
-        </div>
+        <div class="nav-item active">🏠</div>
+        <div class="nav-item">🎒</div>
+        <div class="nav-item">⚔️</div>
+        <div class="nav-item">👤</div>
     </nav>
 
     <script>
-        // Инициализация Telegram Web App
-        document.addEventListener('DOMContentLoaded', function() {
-            const tg = window.Telegram.WebApp;
-            
-            // Сообщаем Телеграму, что приложение готово
-            tg.ready();
-            
-            // Разворачиваем на весь экран
-            tg.expand();
-            
-            // Настраиваем цвета шапки и фона (чтобы системные бары сливались с приложением)
-            // Используем цвета из нашего CSS
-            tg.setHeaderColor('#050508'); 
-            tg.setBackgroundColor('#050508');
-        });
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
 
-        // Функция переключения вкладок (визуально)
-        function switchTab(element) {
-            // Убираем активный класс у всех кнопок
-            const navItems = document.querySelectorAll('.nav-item');
-            navItems.forEach(item => item.classList.remove('active'));
-            
-            // Добавляем активный класс нажатой кнопке
-            element.classList.add('active');
-            
-            // Вибрация (Haptic Feedback) через TWA API, если доступно
-            if(window.Telegram.WebApp.HapticFeedback) {
-                window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-            }
-        }
+        // Настройка цветов шапки под тему
+        tg.setHeaderColor('#050508');
+        tg.setBackgroundColor('#050508');
 
-        // Простая функция для демонстрации кнопок
-        function showAlert(message) {
-            // Используем нативный попап Телеграма если возможно, иначе обычный alert
-            if (window.Telegram.WebApp.showPopup) {
-                window.Telegram.WebApp.showPopup({
-                    title: 'Cyber Relics System',
-                    message: message,
-                    buttons: [{type: 'ok'}]
-                });
+        // --- ЛОГИКА ДАННЫХ ПОЛЬЗОВАТЕЛЯ ---
+        let userBalance = 2450;
+        
+        function initUserData() {
+            // Берем данные из Telegram initDataUnsafe
+            const user = tg.initDataUnsafe.user;
+            
+            if (user) {
+                // Имя
+                document.getElementById('user-name').innerText = user.first_name + (user.last_name ? ' ' + user.last_name : '');
+                
+                // Аватар (если есть, иначе заглушка)
+                if (user.photo_url) {
+                    document.getElementById('user-avatar').src = user.photo_url;
+                }
             } else {
-                alert(message);
+                // Фоллбэк для браузера (тест)
+                console.log("Запущено не в Telegram, используются демо-данные");
             }
         }
+
+        // --- ЛОГИКА ОТКРЫТИЯ КЕЙСА ---
+        
+        // Список предметов (упрощенная база данных)
+        const lootTable = [
+            { name: "Common Chip", img: "https://cdn-icons-png.flaticon.com/512/2640/2640742.png", type: "common" },
+            { name: "Cyber Katana", img: "https://cdn-icons-png.flaticon.com/512/3062/3062634.png", type: "legendary" },
+            { name: "Plasma Rifle", img: "https://cdn-icons-png.flaticon.com/512/2553/2553613.png", type: "rare" },
+            { name: "Neural Link", img: "https://cdn-icons-png.flaticon.com/512/2312/2312217.png", type: "rare" }
+        ];
+
+        function openCase(type) {
+            let cost = type === 'standard' ? 100 : 500;
+            
+            if (userBalance < cost) {
+                tg.showPopup({ title: 'Ошибка', message: 'Недостаточно нейрочипов!' });
+                return;
+            }
+
+            // Списываем баланс
+            userBalance -= cost;
+            updateBalanceUI();
+
+            // Показываем UI открытия
+            const modal = document.getElementById('opening-modal');
+            const phaseOpening = document.getElementById('phase-opening');
+            const phaseReward = document.getElementById('phase-reward');
+            const termLog = document.getElementById('terminal-log');
+            const progressBar = document.getElementById('progress-bar');
+
+            // Сброс состояний
+            modal.style.display = 'flex';
+            setTimeout(() => modal.style.opacity = '1', 10);
+            phaseOpening.style.display = 'block';
+            phaseReward.style.display = 'none';
+            progressBar.style.width = '0%';
+
+            // Haptic feedback (вибрация) - старт
+            tg.HapticFeedback.impactOccurred('medium');
+
+            // Симуляция взлома
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 100) progress = 100;
+                
+                progressBar.style.width = progress + '%';
+                
+                // Случайные логи терминала
+                const logs = ["Bypassing Firewall...", "Injecting SQL...", "Brute-forcing key...", "Access Granted..."];
+                if (Math.random() > 0.7) {
+                    termLog.innerText = logs[Math.floor(Math.random() * logs.length)];
+                }
+
+                if (progress === 100) {
+                    clearInterval(interval);
+                    showReward(type);
+                }
+            }, 150);
+        }
+
+        function showReward(boxType) {
+            // Выбираем предмет (рандом с весами можно добавить, сейчас просто рандом)
+            // Для "elite" шансы на легендарку выше (симуляция)
+            let item;
+            if (boxType === 'elite' && Math.random() > 0.5) {
+                item = lootTable[1]; // Katana
+            } else {
+                item = lootTable[Math.floor(Math.random() * lootTable.length)];
+            }
+
+            // Скрываем загрузку, показываем награду
+            document.getElementById('phase-opening').style.display = 'none';
+            const rewardDiv = document.getElementById('phase-reward');
+            rewardDiv.style.display = 'flex';
+            
+            // Наполняем данными
+            document.getElementById('reward-img').src = item.img;
+            document.getElementById('reward-name').innerText = item.name;
+            document.getElementById('reward-rarity').innerText = item.type;
+            
+            // Стилизуем под редкость
+            rewardDiv.className = 'modal-content reward-container rarity-' + item.type;
+
+            // Вибрация - успех
+            tg.HapticFeedback.notificationOccurred('success');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('opening-modal');
+            modal.style.opacity = '0';
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
+        }
+
+        function updateBalanceUI() {
+            // Анимация счетчика
+            const el = document.getElementById('balance');
+            el.innerText = userBalance;
+            el.style.color = '#ff003c';
+            setTimeout(() => el.style.color = 'white', 300);
+        }
+
+        // Запуск
+        initUserData();
+
     </script>
 </body>
 </html>

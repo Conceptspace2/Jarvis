@@ -3,742 +3,723 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CaseBattle TWA</title>
+    <title>CS2 Case Battle</title>
+    
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;500;600;700;800;900&family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700;900&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --bg-body: #111115;
-            --bg-panel: #191921;
-            --bg-lighter: #22222b;
-            --accent-green: #00e065;
-            --accent-purple: #8b5cf6;
-            --accent-red: #ff445d;
-            --accent-gold: #fbbf24;
+            /* Case Battle Palette */
+            --bg-dark: #121212;
+            --bg-darker: #0d0d0d;
+            --bg-panel: #1e1e24;
+            --bg-card: #18181d;
+            
+            --accent-green: #00fa9a;
+            --accent-green-dim: rgba(0, 250, 154, 0.1);
+            --accent-purple: #8a2be2;
+            --accent-red: #ff4500;
+            --accent-gold: #ffd700;
+            
             --text-main: #ffffff;
-            --text-muted: #6b7280;
-            --rarity-blue: #3b82f6;
-            --rarity-purple: #8b5cf6;
-            --rarity-pink: #ec4899;
-            --rarity-red: #ef4444;
-            --rarity-gold: #fbbf24;
-            --nav-height: 70px;
+            --text-muted: #6c757d;
+            
+            /* Rarities */
+            --rarity-blue: #4b69ff;
+            --rarity-purple: #8847ff;
+            --rarity-pink: #d32ce6;
+            --rarity-red: #eb4b4b;
+            --rarity-gold: #e4ae39;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; outline: none; user-select: none; }
-        
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
+
         body {
-            background-color: var(--bg-body);
+            background-color: var(--bg-dark);
             color: var(--text-main);
             font-family: 'Exo 2', sans-serif;
             height: 100vh;
+            display: flex; flex-direction: column;
             overflow: hidden;
-            display: flex;
-            flex-direction: column;
         }
 
-        /* --- LIVE DROP FEED (TOP BAR) --- */
-        .live-feed-container {
+        /* --- LIVE DROP FEED --- */
+        .live-strip {
             height: 60px;
-            background: var(--bg-panel);
+            background: var(--bg-darker);
             border-bottom: 1px solid rgba(255,255,255,0.05);
             display: flex;
             align-items: center;
             overflow: hidden;
             position: relative;
             flex-shrink: 0;
+            z-index: 20;
         }
-        .live-feed-track {
+        .live-track {
             display: flex;
-            gap: 10px;
-            padding: 0 10px;
-            animation: scrollLeft 20s linear infinite;
+            gap: 2px;
+            animation: infiniteScroll 30s linear infinite;
         }
-        @keyframes scrollLeft { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        @keyframes infiniteScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
         
         .live-item {
-            min-width: 50px; height: 50px;
-            background: var(--bg-lighter);
-            border-radius: 4px;
-            position: relative;
+            width: 80px; height: 60px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(0,0,0,0.2) 100%);
             display: flex; align-items: center; justify-content: center;
-            border-bottom: 2px solid;
+            position: relative;
+            border-bottom: 2px solid transparent;
         }
-        .live-item img { width: 40px; }
-
+        .live-item img { width: 50px; height: 40px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+        
         /* --- HEADER --- */
         header {
-            padding: 10px 16px;
+            padding: 12px 16px;
+            background: var(--bg-panel);
             display: flex; justify-content: space-between; align-items: center;
-            background: var(--bg-body);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
             z-index: 10;
         }
-        .logo { font-weight: 900; font-size: 20px; text-transform: uppercase; letter-spacing: 1px; }
+        .logo { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 18px; letter-spacing: -0.5px; }
         .logo span { color: var(--accent-green); }
         
-        .balance-box {
-            background: rgba(0, 224, 101, 0.1);
-            color: var(--accent-green);
+        .wallet {
+            background: rgba(0,0,0,0.3);
             padding: 6px 12px;
             border-radius: 4px;
-            font-weight: 700;
-            font-size: 14px;
-            display: flex; align-items: center; gap: 6px;
+            border: 1px solid var(--accent-green-dim);
+            color: var(--accent-green);
+            font-weight: 700; font-size: 14px;
+            display: flex; align-items: center; gap: 8px;
             cursor: pointer;
         }
+        .wallet-add { background: var(--accent-green); color: #000; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; }
 
-        /* --- MAIN CONTENT AREA --- */
-        .content {
+        /* --- CONTENT AREA --- */
+        .main-content {
             flex: 1;
             overflow-y: auto;
-            padding: 10px 16px 100px;
-            position: relative;
+            padding: 20px 12px 100px 12px;
         }
 
-        /* --- GRID STYLES --- */
-        .section-title { font-size: 18px; font-weight: 800; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; text-transform: uppercase; }
-        .section-title::before { content: ''; width: 4px; height: 18px; background: var(--accent-green); display: block; }
+        .section-header {
+            font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 700; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;
+        }
+        .section-header::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.1); }
 
-        .cases-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        
+        /* --- CASES GRID --- */
+        .cases-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+        }
         .case-card {
-            background: var(--bg-panel);
+            background: var(--bg-card);
             border-radius: 8px;
-            padding: 15px;
-            text-align: center;
             position: relative;
-            transition: transform 0.1s;
-            border: 1px solid rgba(255,255,255,0.02);
+            overflow: hidden;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 15px 10px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid transparent;
         }
-        .case-card:active { transform: scale(0.97); }
-        .case-img { width: 100px; height: 100px; object-fit: contain; filter: drop-shadow(0 0 15px rgba(0,0,0,0.5)); margin-bottom: 10px; }
-        .case-name { font-weight: 700; font-size: 14px; margin-bottom: 5px; }
-        .case-price { font-weight: 600; color: var(--accent-green); font-size: 13px; }
+        .case-card:active { transform: scale(0.98); }
+        .case-card:hover { border-color: rgba(255,255,255,0.1); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        
+        .case-img { width: 110px; height: 80px; object-fit: contain; margin-bottom: 10px; z-index: 2; transition: transform 0.3s; }
+        .case-card:hover .case-img { transform: scale(1.1) rotate(5deg); }
+        
+        .case-info { text-align: center; z-index: 2; width: 100%; }
+        .case-name { font-size: 13px; font-weight: 600; color: #ccc; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .case-price { font-size: 14px; font-weight: 800; color: var(--text-main); }
+        
+        /* Glow Effect for Cases */
+        .case-card::before {
+            content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 80px; height: 80px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%);
+            z-index: 1;
+        }
 
-        /* --- ROULETTE (OPENING) --- */
-        .roulette-container {
+        /* --- ROULETTE MODAL --- */
+        .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(17, 17, 21, 0.98);
+            background: rgba(10,10,10,0.95);
             z-index: 100;
             display: none;
             flex-direction: column;
             align-items: center;
             justify-content: center;
         }
-        .roulette-window {
+        
+        .roulette-wrapper {
             width: 100%;
-            height: 120px;
-            background: #111;
+            height: 140px;
+            background: #151515;
             position: relative;
-            overflow: hidden;
-            margin-bottom: 30px;
             border-top: 2px solid var(--accent-gold);
             border-bottom: 2px solid var(--accent-gold);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
         }
-        .roulette-indicator {
+        
+        .roulette-center-line {
             position: absolute; left: 50%; top: 0; bottom: 0; width: 4px;
             background: var(--accent-gold);
-            z-index: 5;
             transform: translateX(-50%);
+            z-index: 10;
             box-shadow: 0 0 10px var(--accent-gold);
         }
-        .roulette-strip {
+        
+        .roulette-tape {
             display: flex;
             height: 100%;
             align-items: center;
             will-change: transform;
         }
-        .roulette-item {
-            min-width: 100px;
-            height: 100px;
-            margin: 0 5px;
-            background: var(--bg-lighter);
+        
+        .tape-item {
+            width: 120px; flex-shrink: 0;
+            height: 100%;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            border-bottom: 3px solid transparent;
-        }
-        .roulette-item img { width: 60px; height: 60px; object-fit: contain; }
-
-        .win-modal {
-            text-align: center;
-            opacity: 0; transition: opacity 0.5s;
-        }
-        .win-item-img { width: 150px; height: 150px; margin-bottom: 20px; filter: drop-shadow(0 0 30px rgba(255,255,255,0.2)); }
-        .btn-action {
-            background: var(--accent-green);
-            color: #000;
-            border: none; padding: 12px 30px;
-            border-radius: 4px; font-weight: 800; text-transform: uppercase;
-            margin-top: 20px;
-            font-size: 14px;
-        }
-        .btn-sell { background: var(--accent-red); color: white; margin-left: 10px; }
-
-        /* --- BATTLES UI --- */
-        .battle-area { display: flex; gap: 10px; margin-top: 20px; }
-        .battle-column { flex: 1; background: var(--bg-panel); border-radius: 8px; padding: 10px; min-height: 200px; }
-        .battle-user { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #333; }
-        .battle-avatar { width: 30px; height: 30px; border-radius: 4px; background: #333; }
-        .battle-slot {
-            height: 80px; background: var(--bg-lighter); margin-bottom: 5px; border-radius: 4px;
-            display: flex; align-items: center; justify-content: center;
-            opacity: 0.5;
-        }
-        .battle-slot.active { opacity: 1; border: 1px solid var(--accent-green); }
-        .battle-slot.winner { border: 1px solid var(--accent-gold); box-shadow: inset 0 0 10px var(--accent-gold); }
-
-        /* --- UPGRADER UI --- */
-        .upgrade-circle-container {
-            width: 240px; height: 240px; margin: 40px auto;
+            border-right: 1px solid rgba(255,255,255,0.05);
             position: relative;
         }
-        .upgrade-svg { transform: rotate(-90deg); width: 100%; height: 100%; }
-        .upgrade-bg-ring { stroke: #222; stroke-width: 10; fill: none; }
-        .upgrade-progress-ring {
-            stroke: var(--accent-green); stroke-width: 10; fill: none;
-            stroke-dasharray: 628; stroke-dashoffset: 628; /* 2 * PI * 100 */
-            transition: stroke-dashoffset 0.5s;
+        .tape-item img { width: 90px; height: 70px; object-fit: contain; z-index: 2; }
+        .tape-item::after {
+            content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 4px;
         }
-        .upgrade-pointer {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            transition: transform 3s cubic-bezier(0.1, 0.7, 0.1, 1);
-        }
-        .upgrade-pointer::before {
-            content: ''; position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
-            width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 12px solid #fff;
-        }
-        .upgrade-controls { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
-        .chance-btn { background: var(--bg-lighter); padding: 8px 15px; border-radius: 4px; border: 1px solid #333; color: #fff; }
-        .chance-btn.active { border-color: var(--accent-green); color: var(--accent-green); }
 
-        /* --- NAV BAR --- */
+        .win-card {
+            background: #222; border: 1px solid #333; padding: 20px; border-radius: 12px; text-align: center;
+            opacity: 0; transform: translateY(20px); transition: 0.5s;
+            max-width: 80%;
+        }
+        .win-card.visible { opacity: 1; transform: translateY(0); }
+        
+        .btn-action {
+            margin-top: 15px; padding: 12px 30px; border: none; border-radius: 4px;
+            font-family: 'Exo 2'; font-weight: 800; font-size: 14px; text-transform: uppercase;
+            cursor: pointer; width: 100%;
+        }
+        .btn-green { background: var(--accent-green); color: #000; box-shadow: 0 4px 15px rgba(0, 250, 154, 0.3); }
+        .btn-sell { background: #333; color: #fff; margin-top: 10px; }
+
+        /* --- BATTLE UI --- */
+        .battle-container { display: flex; gap: 8px; width: 100%; }
+        .battle-col { flex: 1; background: var(--bg-card); border-radius: 8px; overflow: hidden; border: 1px solid #333; }
+        .battle-header { padding: 10px; background: rgba(0,0,0,0.3); display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #333; }
+        .avatar { width: 24px; height: 24px; border-radius: 4px; background: #555; object-fit: cover; }
+        .battle-total { margin-left: auto; font-weight: 700; color: var(--accent-green); font-size: 12px; }
+        
+        .battle-slot {
+            height: 90px;
+            display: flex; align-items: center; justify-content: center;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            position: relative;
+        }
+        .battle-slot img { width: 70px; height: 50px; object-fit: contain; }
+        .battle-slot.empty { background: rgba(0,0,0,0.2); }
+        .battle-slot.winner { box-shadow: inset 0 0 15px rgba(0, 250, 154, 0.3); border-left: 2px solid var(--accent-green); }
+        .battle-slot.loser { opacity: 0.5; }
+
+        /* --- UPGRADE UI --- */
+        .upgrade-wrapper {
+            display: flex; flex-direction: column; align-items: center; padding: 20px;
+        }
+        .circle-container {
+            width: 260px; height: 260px; position: relative; margin: 30px 0;
+        }
+        .upgrade-svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+        .circle-bg { fill: none; stroke: #2a2a2a; stroke-width: 15; }
+        .circle-progress { fill: none; stroke: var(--accent-green); stroke-width: 15; stroke-dasharray: 753; stroke-dashoffset: 753; transition: stroke-dashoffset 0.3s; }
+        
+        .pointer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            filter: drop-shadow(0 0 5px rgba(0,0,0,0.5));
+            transition: transform 4s cubic-bezier(0.1, 0.8, 0.1, 1);
+        }
+        .pointer::after {
+            content: ''; position: absolute; top: 5px; left: 50%; transform: translateX(-50%);
+            width: 0; height: 0; 
+            border-left: 10px solid transparent; border-right: 10px solid transparent; border-top: 15px solid #fff;
+        }
+
+        .multipliers { display: flex; gap: 10px; margin-bottom: 20px; }
+        .mult-btn {
+            background: #2a2a2a; color: #888; border: 1px solid transparent; padding: 8px 16px; border-radius: 4px; font-weight: 700; font-family: 'Exo 2';
+        }
+        .mult-btn.active { background: rgba(0, 250, 154, 0.1); color: var(--accent-green); border-color: var(--accent-green); }
+
+        /* --- NAVIGATION --- */
         .nav-bar {
-            height: var(--nav-height);
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 70px;
             background: var(--bg-panel);
-            position: fixed; bottom: 0; width: 100%;
+            border-top: 1px solid #333;
             display: flex; justify-content: space-around; align-items: center;
-            border-top: 1px solid rgba(255,255,255,0.05);
-            z-index: 50;
+            z-index: 50; padding-bottom: 10px; /* Safe area */
         }
         .nav-item {
             display: flex; flex-direction: column; align-items: center; gap: 4px;
-            color: var(--text-muted); font-size: 10px; font-weight: 700; width: 20%;
+            color: #555; font-size: 10px; font-weight: 700; width: 20%;
         }
-        .nav-item i { font-size: 20px; margin-bottom: 2px; }
-        .nav-item.active { color: var(--accent-green); }
-        .nav-center {
-            width: 45px; height: 45px; background: var(--accent-green);
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            margin-bottom: 20px; border: 4px solid var(--bg-body); color: #000;
-            box-shadow: 0 0 15px rgba(0, 224, 101, 0.4);
-        }
+        .nav-item i { font-size: 20px; transition: 0.2s; }
+        .nav-item.active { color: var(--text-main); }
+        .nav-item.active i { color: var(--accent-green); transform: translateY(-3px); text-shadow: 0 0 10px var(--accent-green); }
 
-        /* --- RARITY COLORS --- */
-        .rare-blue { border-color: var(--rarity-blue) !important; color: var(--rarity-blue); }
-        .rare-purple { border-color: var(--rarity-purple) !important; color: var(--rarity-purple); }
-        .rare-pink { border-color: var(--rarity-pink) !important; color: var(--rarity-pink); }
-        .rare-red { border-color: var(--rarity-red) !important; color: var(--rarity-red); }
-        .rare-gold { border-color: var(--rarity-gold) !important; color: var(--rarity-gold); }
+        /* --- RARITY CLASSES --- */
+        .r-blue { color: var(--rarity-blue) !important; border-color: var(--rarity-blue) !important; }
+        .r-purple { color: var(--rarity-purple) !important; border-color: var(--rarity-purple) !important; }
+        .r-pink { color: var(--rarity-pink) !important; border-color: var(--rarity-pink) !important; }
+        .r-red { color: var(--rarity-red) !important; border-color: var(--rarity-red) !important; }
+        .r-gold { color: var(--rarity-gold) !important; border-color: var(--rarity-gold) !important; }
+        
+        .tape-item.r-red::after { background: var(--rarity-red); box-shadow: 0 -5px 15px var(--rarity-red); }
+        .tape-item.r-pink::after { background: var(--rarity-pink); box-shadow: 0 -5px 15px var(--rarity-pink); }
+        .tape-item.r-purple::after { background: var(--rarity-purple); box-shadow: 0 -5px 15px var(--rarity-purple); }
+        .tape-item.r-blue::after { background: var(--rarity-blue); box-shadow: 0 -5px 15px var(--rarity-blue); }
+        .tape-item.r-gold::after { background: var(--rarity-gold); box-shadow: 0 -5px 15px var(--rarity-gold); }
 
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div class="live-feed-container">
-        <div class="live-feed-track" id="live-feed">
-            </div>
+    <div class="live-strip">
+        <div class="live-track" id="live-feed"></div>
     </div>
 
     <header>
         <div class="logo">CASE<span>BATTLE</span></div>
-        <div class="balance-box" onclick="addBalance()">
-            <span>$</span><span id="user-balance">0.00</span> <i class="fa-solid fa-plus-circle"></i>
+        <div class="wallet" onclick="addFunds()">
+            <span id="balance">0.00</span>
+            <div class="wallet-add"><i class="fa-solid fa-plus"></i></div>
         </div>
     </header>
 
-    <div id="view-home" class="content">
-        <div class="section-title">Официальные кейсы</div>
-        <div class="cases-grid" id="cases-list">
-            </div>
+    <div id="view-home" class="main-content">
+        <div class="section-header"><i class="fa-solid fa-fire"></i> Hot Cases</div>
+        <div class="cases-grid" id="cases-grid"></div>
     </div>
 
-    <div id="view-battles" class="content hidden">
-        <div class="section-title">Case Battles</div>
-        <div style="background: var(--bg-panel); padding: 20px; border-radius: 8px; text-align: center;">
-            <p style="color: #aaa; margin-bottom: 15px;">Создай битву или присоединись к боту</p>
-            <button class="btn-action" onclick="startBotBattle()">Создать 1v1 с Ботом ($50)</button>
+    <div id="view-battles" class="main-content hidden">
+        <div class="section-header"><i class="fa-solid fa-swords"></i> Bot Battle 1v1</div>
+        <div style="background: var(--bg-card); padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 20px;">
+            <p style="color: #888; margin-bottom: 10px; font-size: 13px;">Стоимость участия: 100.00</p>
+            <button class="btn-action btn-green" onclick="startBattle()">CREATE BATTLE</button>
+        </div>
+
+        <div id="battle-interface" class="hidden">
+            <div class="battle-container">
+                <div class="battle-col" id="col-user">
+                    <div class="battle-header">
+                        <img id="user-avatar-battle" src="" class="avatar">
+                        <span style="font-size: 12px; font-weight: bold;">YOU</span>
+                        <span class="battle-total" id="total-user">0.00</span>
+                    </div>
+                    </div>
+                <div class="battle-col" id="col-bot">
+                    <div class="battle-header">
+                        <img src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png" class="avatar">
+                        <span style="font-size: 12px; font-weight: bold;">BOT</span>
+                        <span class="battle-total" id="total-bot">0.00</span>
+                    </div>
+                    </div>
+            </div>
+            <div id="battle-result" style="text-align: center; margin-top: 20px; font-size: 20px; font-weight: 900; text-transform: uppercase;"></div>
+        </div>
+    </div>
+
+    <div id="view-upgrade" class="main-content hidden">
+        <div class="section-header"><i class="fa-solid fa-circle-up"></i> Upgrade Skins</div>
+        
+        <div class="upgrade-wrapper">
+            <div style="display: flex; width: 100%; justify-content: space-between; align-items: center;">
+                <div style="text-align: center;">
+                    <div style="font-size: 12px; color: #666;">BET</div>
+                    <div style="font-size: 18px; font-weight: 700;">100.00</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 12px; color: #666;">WIN</div>
+                    <div style="font-size: 18px; font-weight: 700; color: var(--accent-green);" id="upg-win-val">200.00</div>
+                </div>
+            </div>
+
+            <div class="circle-container">
+                <svg class="upgrade-svg">
+                    <circle class="circle-bg" cx="130" cy="130" r="120"></circle>
+                    <circle class="circle-progress" id="upg-circle" cx="130" cy="130" r="120"></circle>
+                </svg>
+                <div class="pointer" id="upg-pointer"></div>
+                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                    <div style="font-size: 32px; font-weight: 900;" id="upg-percent">50%</div>
+                </div>
+            </div>
+
+            <div class="multipliers">
+                <button class="mult-btn" onclick="setUpgrade(1.5)">x1.5</button>
+                <button class="mult-btn active" onclick="setUpgrade(2)">x2</button>
+                <button class="mult-btn" onclick="setUpgrade(5)">x5</button>
+                <button class="mult-btn" onclick="setUpgrade(10)">x10</button>
+            </div>
+
+            <button class="btn-action btn-green" onclick="runUpgrade()">UPGRADE</button>
+        </div>
+    </div>
+
+    <div id="view-profile" class="main-content hidden">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <img id="profile-avatar" src="" style="width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--accent-green);">
+            <h2 style="margin-top: 10px;" id="profile-name">User</h2>
+            <div style="color: #666; font-size: 12px;">Inventory Value: <span style="color: var(--accent-green);" id="inv-value">0.00</span></div>
+        </div>
+        <div class="section-header">My Inventory</div>
+        <div class="cases-grid" id="inventory-grid" style="grid-template-columns: repeat(3, 1fr); gap: 8px;"></div>
+    </div>
+
+    <div class="modal-overlay" id="roulette-modal">
+        <div class="roulette-wrapper">
+            <div class="roulette-center-line"></div>
+            <div class="roulette-tape" id="roulette-tape"></div>
         </div>
         
-        <div id="battle-ui" class="hidden">
-            <div class="battle-area">
-                <div class="battle-column" id="battle-col-user">
-                    <div class="battle-user">
-                        <div class="battle-avatar" style="background: var(--accent-green)"></div>
-                        <div style="font-size: 12px; font-weight: bold;">YOU</div>
-                        <div style="margin-left: auto; color: var(--accent-green); font-weight: bold;" id="battle-total-user">$0</div>
-                    </div>
-                    </div>
-                <div class="battle-column" id="battle-col-bot">
-                    <div class="battle-user">
-                        <div class="battle-avatar" style="background: var(--accent-purple)"></div>
-                        <div style="font-size: 12px; font-weight: bold;">BOT</div>
-                        <div style="margin-left: auto; color: var(--accent-purple); font-weight: bold;" id="battle-total-bot">$0</div>
-                    </div>
-                    </div>
-            </div>
-            <div style="text-align: center; margin-top: 15px; font-weight: 800; font-size: 20px;" id="battle-result"></div>
-        </div>
-    </div>
-
-    <div id="view-upgrade" class="content hidden">
-        <div class="section-title">Upgrader</div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <div style="text-align: center; flex: 1;">
-                <div style="font-size: 12px; color: #777;">ВАША СТАВКА</div>
-                <div style="font-size: 18px; font-weight: bold;" id="upgrade-bet-amount">$0</div>
-                <button class="chance-btn" style="margin-top: 5px; font-size: 10px;" onclick="selectItemForUpgrade()">Выбрать</button>
-            </div>
-            <div style="font-size: 20px; color: #555;">➜</div>
-            <div style="text-align: center; flex: 1;">
-                <div style="font-size: 12px; color: #777;">ВЫИГРЫШ</div>
-                <div style="font-size: 18px; font-weight: bold; color: var(--accent-green);" id="upgrade-win-amount">$0</div>
-            </div>
-        </div>
-
-        <div class="upgrade-circle-container">
-            <svg class="upgrade-svg">
-                <circle class="upgrade-bg-ring" cx="120" cy="120" r="100"></circle>
-                <circle class="upgrade-progress-ring" id="upgrade-ring" cx="120" cy="120" r="100"></circle>
-            </svg>
-            <div class="upgrade-pointer" id="upgrade-pointer"></div>
-            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
-                <div style="font-size: 24px; font-weight: 900;" id="upgrade-chance-display">50%</div>
-            </div>
-        </div>
-
-        <div class="upgrade-controls">
-            <button class="chance-btn" onclick="setUpgradeMode(1.5)">x1.5</button>
-            <button class="chance-btn active" onclick="setUpgradeMode(2)">x2</button>
-            <button class="chance-btn" onclick="setUpgradeMode(5)">x5</button>
-            <button class="chance-btn" onclick="setUpgradeMode(10)">x10</button>
-        </div>
-
-        <button class="btn-action" style="width: 100%; margin-top: 20px;" onclick="runUpgrade()">UPGRADE</button>
-    </div>
-
-    <div id="view-profile" class="content hidden">
-        <div style="text-align: center; margin-bottom: 20px;">
-            <div style="width: 80px; height: 80px; background: #333; border-radius: 50%; margin: 0 auto 10px; border: 2px solid var(--accent-green);">
-                <img id="profile-pic" src="" style="width: 100%; height: 100%; border-radius: 50%;">
-            </div>
-            <h2 id="profile-name">User</h2>
-            <div style="color: #777; font-size: 12px;">Steam ID: 76561198...</div>
-        </div>
-
-        <div class="section-title">Инвентарь</div>
-        <div class="cases-grid" id="inventory-list" style="grid-template-columns: repeat(3, 1fr); gap: 8px;">
-            </div>
-        <div id="empty-inventory" style="text-align: center; color: #555; margin-top: 20px;">Инвентарь пуст</div>
-    </div>
-
-    <div class="roulette-container" id="roulette-modal">
-        <div class="roulette-window">
-            <div class="roulette-indicator"></div>
-            <div class="roulette-strip" id="roulette-strip"></div>
-        </div>
-        <div class="win-modal" id="win-display">
-            <div style="font-size: 18px; color: #fff; margin-bottom: 10px;">ВЫПАЛ ПРЕДМЕТ</div>
-            <img src="" class="win-item-img" id="win-img">
-            <div style="font-size: 20px; font-weight: 800; text-transform: uppercase;" id="win-name">AK-47 | ASIIMOV</div>
-            <div style="color: var(--accent-green); font-weight: 700; margin-bottom: 20px;" id="win-price">$45.00</div>
-            
-            <button class="btn-action" onclick="closeRoulette()">В ИНВЕНТАРЬ</button>
-            <button class="btn-action btn-sell" onclick="sellWin()">ПРОДАТЬ</button>
+        <div class="win-card" id="win-card">
+            <div style="font-size: 16px; color: #aaa; margin-bottom: 10px;">YOU WON</div>
+            <img id="win-img" src="" style="width: 150px; margin-bottom: 15px; filter: drop-shadow(0 0 20px rgba(255,255,255,0.2));">
+            <div id="win-name" style="font-size: 18px; font-weight: 800; text-transform: uppercase;">SKIN NAME</div>
+            <div id="win-price" style="font-size: 16px; font-weight: 700; color: var(--accent-green); margin-bottom: 15px;">0.00</div>
+            <button class="btn-action btn-green" onclick="closeRoulette()">KEEP</button>
+            <button class="btn-action btn-sell" onclick="sellItem()">SELL</button>
         </div>
     </div>
 
     <nav class="nav-bar">
-        <div class="nav-item active" onclick="switchTab('home', this)">
+        <div class="nav-item active" onclick="nav('home', this)">
             <i class="fa-solid fa-box-open"></i>
             <span>Cases</span>
         </div>
-        <div class="nav-item" onclick="switchTab('battles', this)">
-            <i class="fa-solid fa-swords"></i>
+        <div class="nav-item" onclick="nav('battles', this)">
+            <i class="fa-solid fa-users-slash"></i>
             <span>Battles</span>
         </div>
-        <div class="nav-item" onclick="switchTab('upgrade', this)">
-            <div class="nav-center"><i class="fa-solid fa-arrow-up"></i></div>
+        <div class="nav-item" onclick="nav('upgrade', this)">
+            <i class="fa-solid fa-arrow-trend-up"></i>
+            <span>Upgrade</span>
         </div>
-        <div class="nav-item" onclick="switchTab('profile', this)">
-            <i class="fa-solid fa-user"></i>
+        <div class="nav-item" onclick="nav('profile', this)">
+            <i class="fa-regular fa-user"></i>
             <span>Profile</span>
         </div>
     </nav>
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
-        tg.setHeaderColor('#111115');
+<script>
+    // --- INIT ---
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+    tg.setHeaderColor('#1e1e24'); // Match panel color
 
-        // --- DATA ---
-        let balance = 200.00;
-        let inventory = [];
-        let upgradeMultiplier = 2;
-        let selectedInventoryItem = null;
+    // --- DATA ---
+    let balance = 500.00;
+    let inventory = [];
+    let upgradeMult = 2;
+    
+    // Real CS2 Skin Data (Images from Steam CDN)
+    const SKINS = [
+        { name: "AWP | Dragon Lore", price: 2500, rarity: "r-gold", img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJD_9W7m5a0mvLwOq7cQFQq78dy27iR9tWmiQPj_0U9YmGid9eSI1c7MFvW_we6w-q618S575XAnCRj6yBw4X-OmAv330-J8wytYA/360fx360f" },
+        { name: "M4A4 | Howl", price: 1800, rarity: "r-red", img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-6kejhz2v_Nfz5H_uO1gb-Gw_alIImJwlRc7cF4n-SPpI-i3Aew_0o5YT2iJNfHclM5YQzU_gK7wO7mg8C0u5rKzCdg7yYk5XfUmEeyhQYMMLIki7Zt0g/360fx360f" },
+        { name: "AK-47 | Gold Arabesque", price: 1200, rarity: "r-gold", img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV09-5lpKKqPv9NLPF2G0D78Y_3r2Z8I2i0Qq1_kFsY2z1d9CWelI2ZQqF-gS9w-a8h5S5vJ3MzSF9-n51Yx0r-Z4/360fx360f" },
+        { name: "Karambit | Fade", price: 900, rarity: "r-gold", img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLwJf0ebcZThQ6tCvq4GGqPP7I6vdk3lu-M1wmeyTyo78i0fvrxc5Mm_wI4fGcA89MlqB_FDrw-_ngpC5vpzJyyRiuSQm-z-DyBCA4k0T/360fx360f" },
+        { name: "Glock-18 | Fade", price: 600, rarity: "r-purple", img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgposbaqKAxf0v73efTH9eO7fYK0m_7zO6-fz2oI7pEjiLjHpo6n3g3t_kFtYTz1I46UJAQ-Y13Xq1Xvxe_v0cW5vJzJmnR9-n51-q3gWvI/360fx360f" },
+        { name: "USP-S | Kill Confirmed", price: 150, rarity: "r-red", img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpoo6m1FBRp3_bGcjhQ09-jq5WYh8j_OrfdqWhe5sN4mTEyT48t2r2xK60x2Q/360fx360f" },
+        { name: "AK-47 | Asiimov", price: 80, rarity: "r-red", img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV092lnYmGm_PLP7LWnn8f65dw3OyS942l3AGy80s4ZDygJOSWclQ3Ml_Q-lO8xua-jJK0uJvKz3Jj6yRz4i7D30vgF82Fm4E/360fx360f" },
+        { name: "M4A1-S | Printstream", price: 120, rarity: "r-red", img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-6kejhz2v_Nfz5H_uO1gb-Gw_alIImJwlRc7cF4n-SPpI-i3Aew_0o5YT2iJNfHclM5YQzU_gK7wO7mg8C0u5rKzCdg7yYk5XfUmEeyhQYMMLIki7Zt0g/360fx360f" },
+        { name: "P250 | Asiimov", price: 15, rarity: "r-pink", img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpopujwezhz3fzcdD5D09Lhh5O0h_L4PbzXmG9u5Mx2gv2P9I_zj126lBE9YmD0LI6QJgI4M1rR_VG6w-a70Z606pydwXsw7iInt33UgVXp1iE6l2r4/360fx360f" },
+        { name: "AWP | Atheris", price: 10, rarity: "r-blue", img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJU5cy4gYyaqPjxhFlc5cN5t-rN_Iv9nB21rxFqY2r7coKRIFQ9ZgvU-1Pox-fv1p68u5mfmHsy6Sgg-z-DyIVN_-M0/360fx360f" }
+    ];
 
-        const skinsData = [
-            { id: 1, name: "AK-47 | Asiimov", price: 45.00, img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV092lnYmGm_PLP7LWnn8f65dw3OyS942l3AGy80s4ZDygJOSWclQ3Ml_Q-lO8xua-jJK0uJvKz3Jj6yRz4i7D30vgF82Fm4E/360fx360f", rarity: "rare-red" },
-            { id: 2, name: "AWP | Dragon Lore", price: 1500.00, img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJD_9W7m5a0mvLwOq7cQFQq78dy27iR9tWmiQPj_0U9YmGid9eSI1c7MFvW_we6w-q618S575XAnCRj6yBw4X-OmAv330-J8wytYA/360fx360f", rarity: "rare-gold" },
-            { id: 3, name: "M4A4 | Howl", price: 2000.00, img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-6kejhz2v_Nfz5H_uO1gb-Gw_alIImJwlRc7cF4n-SPpI-i3Aew_0o5YT2iJNfHclM5YQzU_gK7wO7mg8C0u5rKzCdg7yYk5XfUmEeyhQYMMLIki7Zt0g/360fx360f", rarity: "rare-red" },
-            { id: 4, name: "Glock-18 | Fade", price: 800.00, img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgposbaqKAxf0v73efTH9eO7fYK0m_7zO6-fz2oI7pEjiLjHpo6n3g3t_kFtYTz1I46UJAQ-Y13Xq1Xvxe_v0cW5vJzJmnR9-n51-q3gWvI/360fx360f", rarity: "rare-pink" },
-            { id: 5, name: "USP-S | Neo-Noir", price: 30.00, img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpoo6m1FBRp3_bGcjhQ09-jq5WYh8j_OrfdqWhe5sN4mTEyT48t2r2xK60x2Q/360fx360f", rarity: "rare-pink" },
-            { id: 6, name: "P250 | Sand Dune", price: 0.03, img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpopujwezhz3fzcdD5D09Lhh5O0h_L4PbzXmG9u5Mx2gv2P9I_zj126lBE9YmD0LI6QJgI4M1rR_VG6w-a70Z606pydwXsw7iInt33UgVXp1iE6l2r4/360fx360f", rarity: "rare-blue" },
-            { id: 7, name: "AWP | Worm God", price: 2.50, img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJU5cy4gYyaqPjxhFlc5cN5t-rN_Iv9nB21rxFqY2r7coKRIFQ9ZgvU-1Pox-fv1p68u5mfmHsy6Sgg-z-DyIVN_-M0/360fx360f", rarity: "rare-purple" }
-        ];
+    const CASES = [
+        { id: 1, name: "Budget King", price: 20, img: "https://cdn-icons-png.flaticon.com/512/9329/9329199.png", pool: [9, 9, 8, 9, 6] },
+        { id: 2, name: "Covert Ops", price: 150, img: "https://cdn-icons-png.flaticon.com/512/3062/3062634.png", pool: [7, 5, 2, 7, 7] },
+        { id: 3, name: "High Roller", price: 500, img: "https://cdn-icons-png.flaticon.com/512/644/644667.png", pool: [4, 2, 1, 3] },
+        { id: 4, name: "Knife Club", price: 1000, img: "https://cdn-icons-png.flaticon.com/512/9626/9626643.png", pool: [3, 4, 1] }
+    ];
 
-        const cases = [
-            { id: 1, name: "Bum Case", price: 5.00, img: "https://cdn-icons-png.flaticon.com/512/9329/9329199.png", pool: [6, 7, 5] },
-            { id: 2, name: "Covert Case", price: 60.00, img: "https://cdn-icons-png.flaticon.com/512/3062/3062634.png", pool: [1, 5, 4, 1] },
-            { id: 3, name: "Rich Guy", price: 300.00, img: "https://cdn-icons-png.flaticon.com/512/644/644667.png", pool: [4, 2, 3] }
-        ];
-
-        // --- INIT ---
-        function init() {
-            updateBalance();
-            renderCases();
-            renderLiveFeed();
-            
-            // User Data
-            const user = tg.initDataUnsafe.user;
-            document.getElementById('profile-name').innerText = user ? (user.first_name || 'User') : 'Guest';
-            document.getElementById('profile-pic').src = user?.photo_url || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-        }
-
-        // --- CORE FUNCTIONS ---
-
-        function updateBalance() {
-            document.getElementById('user-balance').innerText = balance.toFixed(2);
-        }
-
-        function addBalance() {
-            balance += 100;
-            updateBalance();
-            tg.showPopup({ title: 'System', message: 'Баланс пополнен на $100 (Demo)' });
-        }
-
-        function renderCases() {
-            const container = document.getElementById('cases-list');
-            container.innerHTML = cases.map(c => `
-                <div class="case-card" onclick="openCase(${c.id})">
-                    <img src="${c.img}" class="case-img">
-                    <div class="case-name">${c.name}</div>
-                    <div class="case-price">$${c.price.toFixed(2)}</div>
-                </div>
-            `).join('');
-        }
-
-        function renderLiveFeed() {
-            const container = document.getElementById('live-feed');
-            // Duplicate items to fill scroll
-            for(let i=0; i<30; i++) {
-                const skin = skinsData[Math.floor(Math.random() * skinsData.length)];
-                const el = document.createElement('div');
-                el.className = `live-item ${skin.rarity}`;
-                el.innerHTML = `<img src="${skin.img}">`;
-                container.appendChild(el);
+    // --- SETUP ---
+    function init() {
+        const user = tg.initDataUnsafe.user;
+        if(user) {
+            document.getElementById('profile-name').textContent = user.first_name;
+            if(user.photo_url) {
+                document.getElementById('profile-avatar').src = user.photo_url;
+                document.getElementById('user-avatar-battle').src = user.photo_url;
             }
         }
-
-        // --- ROULETTE LOGIC ---
-
-        function openCase(caseId) {
-            const caseObj = cases.find(c => c.id === caseId);
-            if(balance < caseObj.price) {
-                tg.showAlert('Недостаточно средств!');
-                return;
-            }
-
-            balance -= caseObj.price;
-            updateBalance();
-
-            const modal = document.getElementById('roulette-modal');
-            const strip = document.getElementById('roulette-strip');
-            const winDisplay = document.getElementById('win-display');
-            
-            modal.style.display = 'flex';
-            strip.style.transition = 'none';
-            strip.style.transform = 'translateX(0)';
-            winDisplay.style.opacity = '0';
-            winDisplay.style.pointerEvents = 'none';
-
-            // Generate Roulette Line
-            let items = [];
-            for(let i=0; i<50; i++) {
-                // Random item from pool
-                let sId = caseObj.pool[Math.floor(Math.random() * caseObj.pool.length)];
-                items.push(skinsData.find(s => s.id === sId));
-            }
-            
-            // Determine Winner (Item index ~45)
-            const winIndex = 45;
-            // Weighted random for winner could be here, for now just pool random
-            // Let's force a good item occasionally
-            
-            const html = items.map(item => `
-                <div class="roulette-item ${item.rarity}">
-                    <img src="${item.img}">
-                </div>
-            `).join('');
-            strip.innerHTML = html;
-
-            // Animate
-            setTimeout(() => {
-                const itemWidth = 110; // 100 + margin
-                const offset = -(winIndex * itemWidth) + (window.innerWidth / 2) - (itemWidth / 2);
-                // Randomize slightly within the card
-                const randomOffset = Math.floor(Math.random() * 80) - 40;
-                
-                strip.style.transition = 'transform 5s cubic-bezier(0.15, 0, 0, 1)'; // Fast start, slow end
-                strip.style.transform = `translateX(${offset + randomOffset}px)`;
-                
-                // Sound effect trigger here
-                if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-
-                setTimeout(() => {
-                    const wonItem = items[winIndex];
-                    showWin(wonItem);
-                }, 5000);
-            }, 100);
-        }
-
-        let currentWinItem = null;
-
-        function showWin(item) {
-            currentWinItem = item;
-            const winDisplay = document.getElementById('win-display');
-            document.getElementById('win-img').src = item.img;
-            document.getElementById('win-name').innerText = item.name;
-            document.getElementById('win-price').innerText = '$' + item.price.toFixed(2);
-            document.getElementById('win-price').className = item.rarity === 'rare-gold' || item.rarity === 'rare-red' ? 'rare-red' : '';
-            
-            winDisplay.style.pointerEvents = 'all';
-            winDisplay.style.opacity = '1';
-            
-            if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-        }
-
-        function closeRoulette() {
-            inventory.push(currentWinItem);
-            document.getElementById('roulette-modal').style.display = 'none';
-            updateInventoryUI();
-        }
-
-        function sellWin() {
-            balance += currentWinItem.price;
-            updateBalance();
-            document.getElementById('roulette-modal').style.display = 'none';
-            tg.showPopup({message: `Продано за $${currentWinItem.price}`});
-        }
-
-        // --- BATTLE LOGIC (SIMPLE 1v1 BOT) ---
         
-        function startBotBattle() {
-            if(balance < 50) return tg.showAlert('Нужно $50 для битвы');
-            balance -= 50;
-            updateBalance();
+        updateBalance();
+        renderCases();
+        startLiveFeed();
+    }
 
-            const ui = document.getElementById('battle-ui');
-            ui.classList.remove('hidden');
-            
-            const userCol = document.getElementById('battle-col-user');
-            const botCol = document.getElementById('battle-col-bot');
-            
-            // Clear previous
-            while(userCol.children.length > 1) userCol.removeChild(userCol.lastChild);
-            while(botCol.children.length > 1) botCol.removeChild(botCol.lastChild);
-            
-            document.getElementById('battle-result').innerText = '';
-            document.getElementById('battle-total-user').innerText = '$0';
-            document.getElementById('battle-total-bot').innerText = '$0';
+    function updateBalance() {
+        document.getElementById('balance').textContent = balance.toFixed(2);
+    }
+    
+    function addFunds() {
+        balance += 1000;
+        updateBalance();
+        tg.showPopup({message: 'Пополнено на 1000.00 (Demo)'});
+    }
 
-            let round = 0;
-            let totalUser = 0;
-            let totalBot = 0;
-            const maxRounds = 5;
+    // --- RENDER CASES ---
+    function renderCases() {
+        const grid = document.getElementById('cases-grid');
+        grid.innerHTML = CASES.map(c => `
+            <div class="case-card" onclick="openCase(${c.id})">
+                <img src="${c.img}" class="case-img">
+                <div class="case-info">
+                    <div class="case-name">${c.name}</div>
+                    <div class="case-price">${c.price.toFixed(2)}</div>
+                </div>
+            </div>
+        `).join('');
+    }
 
-            const interval = setInterval(() => {
-                round++;
-                
-                // Logic
-                const userDrop = skinsData[Math.floor(Math.random() * skinsData.length)];
-                const botDrop = skinsData[Math.floor(Math.random() * skinsData.length)];
-                
-                totalUser += userDrop.price;
-                totalBot += botDrop.price;
+    // --- LIVE FEED ---
+    function startLiveFeed() {
+        const track = document.getElementById('live-feed');
+        // Pre-fill
+        for(let i=0; i<20; i++) appendLiveItem(track);
+        // Add new items occasionally
+        setInterval(() => appendLiveItem(track), 2000);
+    }
 
-                // Render slots
-                addBattleSlot(userCol, userDrop, userDrop.price > botDrop.price);
-                addBattleSlot(botCol, botDrop, botDrop.price > userDrop.price);
-                
-                document.getElementById('battle-total-user').innerText = '$' + totalUser.toFixed(2);
-                document.getElementById('battle-total-bot').innerText = '$' + totalBot.toFixed(2);
-                
-                if(tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+    function appendLiveItem(track) {
+        const skin = SKINS[Math.floor(Math.random() * SKINS.length)];
+        const div = document.createElement('div');
+        div.className = 'live-item';
+        div.innerHTML = `<img src="${skin.img}">`;
+        div.style.borderBottomColor = getComputedStyle(document.body).getPropertyValue(`--rarity-${skin.rarity.replace('r-','')}`);
+        track.insertBefore(div, track.firstChild);
+        if(track.children.length > 30) track.removeChild(track.lastChild);
+    }
 
-                if(round >= maxRounds) {
-                    clearInterval(interval);
-                    setTimeout(() => {
-                        const win = totalUser > totalBot;
-                        const msg = win ? `YOU WON $${(totalUser+totalBot).toFixed(2)}` : 'YOU LOST';
-                        const el = document.getElementById('battle-result');
-                        el.innerText = msg;
-                        el.style.color = win ? 'var(--accent-green)' : 'var(--accent-red)';
-                        
-                        if(win) {
-                            balance += (totalUser + totalBot);
-                            updateBalance();
-                            tg.HapticFeedback.notificationOccurred('success');
-                        } else {
-                            tg.HapticFeedback.notificationOccurred('error');
-                        }
-                    }, 1000);
-                }
-            }, 1500);
+    // --- ROULETTE LOGIC ---
+    let currentWinItem = null;
+
+    function openCase(id) {
+        const caseObj = CASES.find(c => c.id === id);
+        if(balance < caseObj.price) return tg.showAlert("Недостаточно средств");
+        
+        balance -= caseObj.price;
+        updateBalance();
+
+        const modal = document.getElementById('roulette-modal');
+        const tape = document.getElementById('roulette-tape');
+        const winCard = document.getElementById('win-card');
+        
+        modal.style.display = 'flex';
+        winCard.classList.remove('visible');
+        tape.style.transition = 'none';
+        tape.style.transform = 'translateX(0)';
+
+        // Generate Items
+        let items = [];
+        for(let i=0; i<50; i++) {
+            let skinIdx = caseObj.pool[Math.floor(Math.random() * caseObj.pool.length)];
+            items.push(SKINS[skinIdx]);
         }
+        
+        // Winner at index 40
+        const WIN_IDX = 40;
+        currentWinItem = items[WIN_IDX];
+        
+        tape.innerHTML = items.map(item => `
+            <div class="tape-item ${item.rarity}">
+                <img src="${item.img}">
+            </div>
+        `).join('');
 
-        function addBattleSlot(col, item, isWinner) {
-            const div = document.createElement('div');
-            div.className = `battle-slot active ${isWinner ? 'winner' : ''}`;
-            div.innerHTML = `<img src="${item.img}" style="height:50px;">`;
-            col.appendChild(div);
-        }
-
-        // --- UPGRADER LOGIC ---
-
-        function setUpgradeMode(mult) {
-            upgradeMultiplier = mult;
-            document.querySelectorAll('.upgrade-controls button').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
+        // Animate
+        setTimeout(() => {
+            const itemWidth = 120;
+            const screenCenter = window.innerWidth / 2;
+            const offset = (WIN_IDX * itemWidth) - screenCenter + (itemWidth / 2);
+            // Random offset within item for realism
+            const rand = Math.floor(Math.random() * 80) - 40; 
             
-            // Update UI Ring
-            const chance = (1 / mult) * 100 * 0.9; // House edge 10%
-            document.getElementById('upgrade-chance-display').innerText = chance.toFixed(1) + '%';
+            tape.style.transition = 'transform 6s cubic-bezier(0.1, 0.85, 0.1, 1)';
+            tape.style.transform = `translateX(-${offset + rand}px)`;
             
-            // Stroke dasharray logic
-            // Max is 628. If chance is 50%, we need half circle.
-            const offset = 628 - (628 * (chance / 100));
-            document.getElementById('upgrade-ring').style.strokeDashoffset = offset;
-            
-            updateUpgradeWinAmt();
-        }
-
-        function selectItemForUpgrade() {
-            if(inventory.length === 0) return tg.showAlert('Инвентарь пуст');
-            // For demo, just pick first or random
-            selectedInventoryItem = inventory[0];
-            document.getElementById('upgrade-bet-amount').innerText = '$' + selectedInventoryItem.price.toFixed(2);
-            updateUpgradeWinAmt();
-        }
-
-        function updateUpgradeWinAmt() {
-            if(!selectedInventoryItem) return;
-            const val = selectedInventoryItem.price * upgradeMultiplier;
-            document.getElementById('upgrade-win-amount').innerText = '$' + val.toFixed(2);
-        }
-
-        function runUpgrade() {
-            if(!selectedInventoryItem) return tg.showAlert('Выберите предмет');
-            
-            // Remove item
-            const idx = inventory.indexOf(selectedInventoryItem);
-            inventory.splice(idx, 1);
-            updateInventoryUI();
-            
-            const pointer = document.getElementById('upgrade-pointer');
-            
-            // Random degree 0 to 360
-            // Winning zone depends on chance. 
-            // e.g. 50% chance = win if lands 0-180.
-            const chance = (1 / upgradeMultiplier) * 0.9;
-            const winAngleLimit = 360 * chance;
-            
-            // Cheat logic for demo: 50/50 real outcome
-            const isWin = Math.random() < chance;
-            
-            let landingAngle;
-            if(isWin) {
-                // Land inside win zone
-                landingAngle = Math.random() * winAngleLimit;
-            } else {
-                // Land outside
-                landingAngle = winAngleLimit + (Math.random() * (360 - winAngleLimit));
-            }
-            
-            // Add spins
-            const finalRotate = 1440 + landingAngle; // 4 spins
-            
-            pointer.style.transform = `rotate(${finalRotate}deg)`;
-            
+            // Haptic Feedback simulation on stop
             setTimeout(() => {
-                if(isWin) {
-                    const newVal = selectedInventoryItem.price * upgradeMultiplier;
-                    balance += newVal; // Auto sell for simplicity in demo or give item
-                    updateBalance();
-                    tg.showPopup({title:'UPGRADE SUCCESS', message:`Вы получили $${newVal.toFixed(2)}`});
-                } else {
-                    tg.showPopup({title:'FAILED', message:'Предмет сгорел'});
-                }
-                
-                pointer.style.transition = 'none';
-                pointer.style.transform = 'rotate(0deg)';
-                setTimeout(() => { pointer.style.transition = 'transform 3s cubic-bezier(0.1, 0.7, 0.1, 1)'; }, 100);
-                
-                selectedInventoryItem = null;
-                document.getElementById('upgrade-bet-amount').innerText = '$0';
-            }, 3000);
-        }
+                if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                showWin(currentWinItem);
+            }, 6000);
+        }, 100);
+    }
 
-        // --- NAVIGATION & UTILS ---
+    function showWin(item) {
+        document.getElementById('win-img').src = item.img;
+        document.getElementById('win-name').innerText = item.name;
+        document.getElementById('win-price').innerText = item.price.toFixed(2);
+        const wc = document.getElementById('win-card');
+        wc.style.borderBottom = `3px solid var(--${item.rarity.replace('r-','rarity-')})`;
+        wc.classList.add('visible');
+    }
 
-        function switchTab(tab, el) {
-            document.querySelectorAll('.content').forEach(c => c.classList.add('hidden'));
-            document.getElementById('view-' + tab).classList.remove('hidden');
-            
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            if(el) el.classList.add('active');
-            
-            if(tab === 'profile') updateInventoryUI();
-        }
+    function closeRoulette() {
+        inventory.push(currentWinItem);
+        document.getElementById('roulette-modal').style.display = 'none';
+        updateInventory();
+    }
 
-        function updateInventoryUI() {
-            const list = document.getElementById('inventory-list');
-            const empty = document.getElementById('empty-inventory');
-            list.innerHTML = '';
+    function sellItem() {
+        balance += currentWinItem.price;
+        updateBalance();
+        document.getElementById('roulette-modal').style.display = 'none';
+        tg.showPopup({message: `Продано за ${currentWinItem.price}`});
+    }
+
+    // --- BATTLES LOGIC ---
+    function startBattle() {
+        if(balance < 100) return tg.showAlert("Нужно 100.00");
+        balance -= 100;
+        updateBalance();
+
+        document.getElementById('battle-interface').classList.remove('hidden');
+        document.getElementById('battle-result').innerText = "";
+        
+        const uCol = document.getElementById('col-user');
+        const bCol = document.getElementById('col-bot');
+        
+        // Clear slots (keep header)
+        while(uCol.children.length > 1) uCol.removeChild(uCol.lastChild);
+        while(bCol.children.length > 1) bCol.removeChild(bCol.lastChild);
+
+        let uTotal = 0, bTotal = 0;
+        let round = 0;
+        
+        const interval = setInterval(() => {
+            round++;
+            const uSkin = SKINS[Math.floor(Math.random() * SKINS.length)];
+            const bSkin = SKINS[Math.floor(Math.random() * SKINS.length)];
             
-            if(inventory.length === 0) {
-                empty.style.display = 'block';
-            } else {
-                empty.style.display = 'none';
-                inventory.forEach(item => {
-                    const div = document.createElement('div');
-                    div.className = 'case-card'; // Reuse style
-                    div.style.padding = '5px';
-                    div.innerHTML = `
-                        <div style="font-size:10px; text-align:right; color:var(--accent-green)">$${item.price}</div>
-                        <img src="${item.img}" style="width:50px; height:50px; object-fit:contain;">
-                        <div style="font-size:10px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">${item.name}</div>
-                    `;
-                    list.appendChild(div);
-                });
+            uTotal += uSkin.price;
+            bTotal += bSkin.price;
+
+            document.getElementById('total-user').innerText = uTotal.toFixed(2);
+            document.getElementById('total-bot').innerText = bTotal.toFixed(2);
+
+            addBattleSlot(uCol, uSkin, uSkin.price > bSkin.price);
+            addBattleSlot(bCol, bSkin, bSkin.price > uSkin.price);
+            
+            if(tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+
+            if(round >= 5) {
+                clearInterval(interval);
+                setTimeout(() => {
+                    const win = uTotal > bTotal;
+                    const res = document.getElementById('battle-result');
+                    res.innerText = win ? "YOU WIN" : "BOT WINS";
+                    res.style.color = win ? "var(--accent-green)" : "var(--accent-red)";
+                    
+                    if(win) {
+                        balance += (uTotal + bTotal);
+                        updateBalance();
+                        tg.HapticFeedback.notificationOccurred('success');
+                    } else {
+                        tg.HapticFeedback.notificationOccurred('error');
+                    }
+                }, 1000);
             }
-        }
+        }, 1500);
+    }
 
-        // Start
-        init();
+    function addBattleSlot(col, skin, winner) {
+        const div = document.createElement('div');
+        div.className = `battle-slot ${winner ? 'winner' : 'loser'}`;
+        div.innerHTML = `<img src="${skin.img}">`;
+        col.appendChild(div);
+    }
 
-    </script>
+    // --- UPGRADE LOGIC ---
+    function setUpgrade(m) {
+        upgradeMult = m;
+        document.querySelectorAll('.mult-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        const chance = (1 / m) * 0.95; // 5% house edge
+        const pct = (chance * 100).toFixed(0);
+        document.getElementById('upg-percent').innerText = pct + '%';
+        document.getElementById('upg-win-val').innerText = (100 * m).toFixed(2);
+        
+        // Circle logic (Max stroke-dasharray = 753)
+        const offset = 753 - (753 * chance);
+        document.getElementById('upg-circle').style.strokeDashoffset = offset;
+    }
+
+    function runUpgrade() {
+        if(balance < 100) return tg.showAlert("Ставка 100.00");
+        balance -= 100;
+        updateBalance();
+
+        const ptr = document.getElementById('upg-pointer');
+        const chance = (1 / upgradeMult) * 0.95;
+        const win = Math.random() < chance;
+        
+        // Random landing angle
+        let angle;
+        if(win) angle = Math.random() * (360 * chance);
+        else angle = (360 * chance) + Math.random() * (360 * (1-chance));
+        
+        const totalRot = 1440 + angle; // 4 spins
+        
+        ptr.style.transform = `rotate(${totalRot}deg)`;
+        
+        setTimeout(() => {
+            if(win) {
+                balance += 100 * upgradeMult;
+                updateBalance();
+                tg.showPopup({title:'УСПЕХ', message:`Выиграно ${100*upgradeMult}`});
+                tg.HapticFeedback.notificationOccurred('success');
+            } else {
+                tg.showPopup({title:'ПРОВАЛ', message:'Предмет сгорел'});
+                tg.HapticFeedback.notificationOccurred('error');
+            }
+            // Reset
+            ptr.style.transition = 'none';
+            ptr.style.transform = 'rotate(0deg)';
+            setTimeout(() => { ptr.style.transition = 'transform 4s cubic-bezier(0.1, 0.8, 0.1, 1)'; }, 100);
+        }, 4000);
+    }
+
+    // --- UTILS ---
+    function updateInventory() {
+        const grid = document.getElementById('inventory-grid');
+        grid.innerHTML = inventory.map(item => `
+            <div class="case-card" style="padding:10px;">
+                <img src="${item.img}" style="width:60px; height:40px; object-fit:contain;">
+                <div style="font-size:10px; color:#aaa; margin-top:5px;">${item.name}</div>
+                <div style="font-size:11px; font-weight:bold;">${item.price}</div>
+            </div>
+        `).join('');
+        
+        const total = inventory.reduce((acc, i) => acc + i.price, 0);
+        document.getElementById('inv-value').innerText = total.toFixed(2);
+    }
+
+    function nav(view, el) {
+        document.querySelectorAll('.main-content').forEach(d => d.classList.add('hidden'));
+        document.getElementById('view-' + view).classList.remove('hidden');
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        el.classList.add('active');
+    }
+
+    init();
+
+</script>
 </body>
 </html>

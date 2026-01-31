@@ -1,676 +1,2320 @@
-<!DOCTYPE html>
-<html lang="ru">
+<!doctype html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CaseBattle Store TWA</title>
-    
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <style>
-        :root {
-            /* Палитра Case-Battle.store */
-            --bg-body: #13151b;
-            --bg-header: #1b1e28;
-            --bg-card: #1b1e28;
-            --bg-input: #111217;
-            
-            --accent-orange: #fca505;
-            --accent-orange-hover: #ffb830;
-            --accent-purple: #6c5dd3;
-            --accent-green: #00c74d;
-            --accent-red: #ff3b30;
-            
-            --text-main: #ffffff;
-            --text-muted: #6e7485;
-            
-            /* Редкости (цвета полосок) */
-            --rarity-blue: #4b69ff;
-            --rarity-purple: #8847ff;
-            --rarity-pink: #d32ce6;
-            --rarity-red: #eb4b4b;
-            --rarity-gold: #e4ae39;
-
-            --nav-height: 70px;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; }
-        
-        body {
-            background-color: var(--bg-body);
-            color: var(--text-main);
-            font-family: 'Rubik', sans-serif;
-            height: 100vh;
-            display: flex; flex-direction: column;
-            overflow: hidden;
-        }
-
-        /* --- LIVE FEED (ЛЕНТА) --- */
-        .live-bar {
-            height: 65px;
-            background: #101116;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            display: flex;
-            align-items: center;
-            overflow: hidden;
-            position: relative;
-            flex-shrink: 0;
-            z-index: 20;
-        }
-        .live-track {
-            display: flex;
-            gap: 2px;
-            animation: scroll 30s linear infinite;
-        }
-        @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-        
-        .live-item {
-            width: 90px; height: 65px;
-            background: linear-gradient(180deg, rgba(30,33,43,0.5) 0%, rgba(19,21,27,0.8) 100%);
-            display: flex; align-items: center; justify-content: center;
-            position: relative;
-            border-bottom: 3px solid transparent;
-            transition: 0.2s;
-        }
-        .live-item:hover { background: #252833; }
-        .live-item img { width: 60px; height: 45px; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
-
-        /* --- HEADER --- */
-        header {
-            height: 70px;
-            background: var(--bg-header);
-            padding: 0 16px;
-            display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-            z-index: 10;
-        }
-
-        .logo { 
-            font-weight: 900; font-size: 20px; text-transform: uppercase; letter-spacing: 0.5px;
-            display: flex; align-items: center; gap: 5px;
-        }
-        .logo span:first-child { color: #fff; }
-        .logo span:last-child { color: var(--accent-orange); background: -webkit-linear-gradient(45deg, #fca505, #ff7a00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-
-        .balance-wrap {
-            background: #111217;
-            padding: 6px 12px;
-            border-radius: 8px;
-            border: 1px solid #2a2d3a;
-            display: flex; align-items: center; gap: 10px;
-        }
-        .balance-val { font-weight: 700; font-size: 15px; color: #fff; }
-        .balance-add {
-            width: 24px; height: 24px;
-            background: linear-gradient(90deg, var(--accent-orange), #ff7a00);
-            border-radius: 4px;
-            display: flex; align-items: center; justify-content: center;
-            color: #000; font-size: 12px; cursor: pointer;
-            box-shadow: 0 0 10px rgba(252, 165, 5, 0.3);
-        }
-
-        /* --- MAIN CONTENT --- */
-        .content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px 12px 100px;
-        }
-
-        .section-title {
-            font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 15px;
-            display: flex; align-items: center; gap: 8px;
-            text-transform: uppercase;
-        }
-        .section-title i { color: var(--accent-orange); }
-
-        /* --- CASES GRID --- */
-        .cases-grid {
-            display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
-        }
-        
-        .case-card {
-            background: var(--bg-card);
-            border-radius: 12px;
-            padding: 15px;
-            display: flex; flex-direction: column; align-items: center;
-            position: relative;
-            border: 1px solid transparent;
-            transition: all 0.2s;
-            overflow: hidden;
-        }
-        .case-card:active { transform: scale(0.98); }
-        /* Эффект свечения при наведении (имитация) */
-        .case-card::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at center, rgba(108, 93, 211, 0.15) 0%, transparent 70%);
-            opacity: 0.5;
-        }
-        
-        .case-img { width: 100px; height: 90px; object-fit: contain; margin-bottom: 10px; z-index: 2; filter: drop-shadow(0 0 15px rgba(0,0,0,0.5)); transition: 0.3s; }
-        
-        .case-info { z-index: 2; width: 100%; text-align: center; }
-        .case-name { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        
-        .case-btn {
-            background: #252833;
-            color: #fff;
-            padding: 8px 0;
-            width: 100%;
-            border-radius: 6px;
-            font-weight: 700; font-size: 13px;
-            border: 1px solid rgba(255,255,255,0.05);
-            transition: 0.2s;
-        }
-        .case-card:hover .case-btn { background: var(--accent-orange); color: #000; border-color: var(--accent-orange); box-shadow: 0 0 15px rgba(252, 165, 5, 0.4); }
-
-        /* --- ROULETTE MODAL (Full Screen) --- */
-        .roulette-modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(19, 21, 27, 0.98);
-            z-index: 100;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .roulette-container {
-            width: 100%;
-            height: 160px;
-            background: #16181f;
-            position: relative;
-            border-top: 2px solid var(--accent-orange);
-            border-bottom: 2px solid var(--accent-orange);
-            margin-bottom: 30px;
-            box-shadow: 0 0 50px rgba(0,0,0,0.5);
-            overflow: hidden;
-        }
-        
-        /* Центральная линия */
-        .roulette-pointer {
-            position: absolute; left: 50%; top: 0; bottom: 0; width: 2px;
-            background: var(--accent-orange);
-            transform: translateX(-50%);
-            z-index: 10;
-            box-shadow: 0 0 10px var(--accent-orange);
-        }
-        .roulette-pointer::after {
-            content: '▼'; position: absolute; top: -10px; left: -6px; color: var(--accent-orange); font-size: 12px;
-        }
-        .roulette-pointer::before {
-            content: '▲'; position: absolute; bottom: -10px; left: -6px; color: var(--accent-orange); font-size: 12px;
-        }
-
-        .roulette-strip {
-            display: flex;
-            height: 100%;
-            align-items: center;
-            will-change: transform;
-        }
-        
-        .roulette-item {
-            min-width: 130px;
-            height: 100%;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            border-right: 1px solid rgba(255,255,255,0.05);
-            position: relative;
-            background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%);
-        }
-        .roulette-item img { width: 90px; height: 70px; object-fit: contain; margin-bottom: 10px; z-index: 2; }
-        .roulette-item::after {
-            content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 4px;
-        }
-
-        /* --- WIN MODAL --- */
-        .win-display {
-            text-align: center; opacity: 0; transform: translateY(20px); transition: 0.5s; pointer-events: none;
-        }
-        .win-display.active { opacity: 1; transform: translateY(0); pointer-events: all; }
-        
-        .win-img-wrapper {
-            position: relative; width: 160px; height: 120px; margin: 0 auto 20px;
-        }
-        .win-img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 20px rgba(255,255,255,0.2)); }
-        
-        .win-name { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 5px; text-transform: uppercase; }
-        .win-price { font-size: 20px; font-weight: 900; color: var(--accent-green); margin-bottom: 25px; }
-        
-        .action-btn {
-            background: #2a2d3a;
-            color: #fff;
-            border: none;
-            padding: 14px 40px;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 14px;
-            cursor: pointer;
-            text-transform: uppercase;
-            width: 100%;
-            margin-bottom: 10px;
-        }
-        .btn-green { background: var(--accent-green); color: #000; box-shadow: 0 4px 15px rgba(0, 199, 77, 0.4); }
-        .btn-sell { background: var(--accent-orange); color: #000; box-shadow: 0 4px 15px rgba(252, 165, 5, 0.4); }
-
-        /* --- BATTLE MODE --- */
-        .battle-ui { display: flex; gap: 5px; margin-top: 10px; }
-        .battle-col { flex: 1; background: #16181f; border-radius: 8px; overflow: hidden; border: 1px solid #2a2d3a; }
-        .col-header { padding: 10px; background: #1b1e28; border-bottom: 1px solid #2a2d3a; display: flex; align-items: center; justify-content: space-between; }
-        .col-avatar { width: 30px; height: 30px; border-radius: 6px; background: #333; }
-        
-        .slot-item {
-            height: 80px; display: flex; align-items: center; justify-content: center;
-            border-bottom: 1px solid rgba(255,255,255,0.05); position: relative;
-        }
-        .slot-item img { width: 60px; height: 50px; object-fit: contain; }
-        .slot-item.winner { background: rgba(0, 199, 77, 0.1); box-shadow: inset 3px 0 0 var(--accent-green); }
-
-        /* --- NAVIGATION --- */
-        .nav-bar {
-            position: fixed; bottom: 0; left: 0; width: 100%; height: var(--nav-height);
-            background: #1b1e28;
-            border-top: 1px solid #2a2d3a;
-            display: flex; justify-content: space-around; align-items: center;
-            z-index: 50; padding-bottom: 10px;
-        }
-        .nav-item {
-            display: flex; flex-direction: column; align-items: center; gap: 4px;
-            color: var(--text-muted); font-size: 10px; font-weight: 600; width: 20%; transition: 0.2s;
-        }
-        .nav-item i { font-size: 20px; }
-        .nav-item.active { color: #fff; }
-        .nav-item.active i { color: var(--accent-purple); transform: translateY(-3px); filter: drop-shadow(0 0 8px var(--accent-purple)); }
-        
-        /* Central Button */
-        .nav-center {
-            width: 48px; height: 48px;
-            background: linear-gradient(135deg, var(--accent-purple), #8e2de2);
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            margin-bottom: 25px;
-            border: 4px solid var(--bg-body);
-            box-shadow: 0 0 15px rgba(108, 93, 211, 0.5);
-        }
-        .nav-center i { color: #fff; font-size: 22px; }
-
-        /* Helpers */
-        .hidden { display: none !important; }
-        .text-gold { color: var(--accent-orange); }
-        .text-green { color: var(--accent-green); }
-        
-        /* Rarities Colors */
-        .r-blue { color: var(--rarity-blue); } .bg-r-blue { background: var(--rarity-blue); }
-        .r-purple { color: var(--rarity-purple); } .bg-r-purple { background: var(--rarity-purple); }
-        .r-pink { color: var(--rarity-pink); } .bg-r-pink { background: var(--rarity-pink); }
-        .r-red { color: var(--rarity-red); } .bg-r-red { background: var(--rarity-red); }
-        .r-gold { color: var(--rarity-gold); } .bg-r-gold { background: var(--rarity-gold); }
-
-        /* Rarity Underlines */
-        .roulette-item.r-blue::after { background: var(--rarity-blue); box-shadow: 0 -2px 10px var(--rarity-blue); }
-        .roulette-item.r-purple::after { background: var(--rarity-purple); box-shadow: 0 -2px 10px var(--rarity-purple); }
-        .roulette-item.r-pink::after { background: var(--rarity-pink); box-shadow: 0 -2px 10px var(--rarity-pink); }
-        .roulette-item.r-red::after { background: var(--rarity-red); box-shadow: 0 -2px 10px var(--rarity-red); }
-        .roulette-item.r-gold::after { background: var(--rarity-gold); box-shadow: 0 -2px 10px var(--rarity-gold); }
-
-        .live-item[data-rarity="r-blue"] { border-bottom-color: var(--rarity-blue); }
-        .live-item[data-rarity="r-purple"] { border-bottom-color: var(--rarity-purple); }
-        .live-item[data-rarity="r-pink"] { border-bottom-color: var(--rarity-pink); }
-        .live-item[data-rarity="r-red"] { border-bottom-color: var(--rarity-red); }
-        .live-item[data-rarity="r-gold"] { border-bottom-color: var(--rarity-gold); }
-
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Broke → Millionaire (Telegram Mini App)</title>
+  <style>
+    :root{
+      --bg:#0f1115;
+      --card:#151923;
+      --muted:#8b93a7;
+      --text:#e9edf6;
+      --accent:#4ea1ff;
+      --accent2:#7c5cff;
+      --good:#3ddc97;
+      --bad:#ff5b6e;
+      --warn:#ffcc66;
+      --border:rgba(255,255,255,.08);
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius:16px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);-webkit-tap-highlight-color:transparent;}
+    .app{min-height:100%;display:flex;flex-direction:column;max-width:980px;margin:0 auto;}
+    .topbar{
+      position:sticky;top:0;z-index:20;
+      background:linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.2));
+      backdrop-filter: blur(10px);
+      border-bottom:1px solid var(--border);
+      padding: max(10px, env(safe-area-inset-top)) 12px 10px;
+    }
+    .row{display:flex;align-items:center;gap:10px;}
+    .space{flex:1;}
+    .pill{
+      display:flex;flex-direction:column;gap:2px;
+      padding:10px 12px;background:rgba(255,255,255,.05);
+      border:1px solid var(--border);border-radius:999px;
+      min-width: 110px;
+    }
+    .pill .k{font-size:11px;color:var(--muted);letter-spacing:.02em;}
+    .pill .v{font-size:14px;font-weight:700;font-variant-numeric: tabular-nums;}
+    .pill.energy{min-width:130px;}
+    .pill small{font-size:11px;color:var(--muted);font-weight:600;}
+    .btn{
+      appearance:none;border:1px solid var(--border);background:rgba(255,255,255,.06);
+      color:var(--text);padding:10px 12px;border-radius:12px;
+      font-weight:700;cursor:pointer;user-select:none;
+      transition:transform .05s ease, background .15s ease, border-color .15s ease;
+    }
+    .btn:active{transform:scale(.98);}
+    .btn.primary{background:linear-gradient(135deg, rgba(78,161,255,.25), rgba(124,92,255,.18));border-color:rgba(78,161,255,.35);}
+    .btn.good{background:rgba(61,220,151,.12);border-color:rgba(61,220,151,.35);}
+    .btn.bad{background:rgba(255,91,110,.12);border-color:rgba(255,91,110,.35);}
+    .btn.warn{background:rgba(255,204,102,.12);border-color:rgba(255,204,102,.35);}
+    .btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+    .content{flex:1;padding:12px 12px 84px;}
+    .grid{display:grid;gap:12px;}
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:14px;
+    }
+    .card h2{margin:0 0 10px;font-size:16px;}
+    .sub{color:var(--muted);font-size:13px;line-height:1.35;margin:6px 0 0;}
+    .muted{color:var(--muted);}
+    .hr{height:1px;background:var(--border);margin:12px 0;}
+    .kv{display:grid;grid-template-columns: 1fr auto;gap:8px;align-items:center;}
+    .kv .k{color:var(--muted);font-size:12px;}
+    .kv .v{font-variant-numeric:tabular-nums;font-weight:800;}
+    .big{
+      font-size:22px;font-weight:900;letter-spacing:-.02em;
+      font-variant-numeric: tabular-nums;
+    }
+    .actions{display:flex;gap:10px;flex-wrap:wrap;}
+    .tag{
+      font-size:12px;font-weight:800;padding:6px 10px;border-radius:999px;
+      border:1px solid var(--border);background:rgba(255,255,255,.05);
+    }
+    .tag.good{border-color:rgba(61,220,151,.35);background:rgba(61,220,151,.10);}
+    .tag.bad{border-color:rgba(255,91,110,.35);background:rgba(255,91,110,.10);}
+    .tag.warn{border-color:rgba(255,204,102,.35);background:rgba(255,204,102,.10);}
+    .list{display:flex;flex-direction:column;gap:10px;}
+    .item{
+      display:grid;grid-template-columns: 1fr auto;gap:10px;align-items:center;
+      padding:12px;border-radius:14px;border:1px solid var(--border);
+      background:rgba(0,0,0,.15);
+    }
+    .item .t{font-weight:900;}
+    .item .d{color:var(--muted);font-size:12px;margin-top:3px;line-height:1.25;}
+    .item .right{display:flex;flex-direction:column;gap:8px;align-items:flex-end;}
+    .mono{font-family:var(--mono);font-variant-numeric:tabular-nums;}
+    .small{font-size:12px;}
+    .tabs{
+      position:fixed;bottom:0;left:0;right:0;z-index:30;
+      padding:10px 10px max(10px, env(safe-area-inset-bottom));
+      background:linear-gradient(180deg, rgba(0,0,0,.0), rgba(0,0,0,.55));
+      backdrop-filter: blur(10px);
+      border-top:1px solid var(--border);
+      display:flex;justify-content:center;
+    }
+    .tabs .bar{
+      width:min(980px, 100%);
+      display:grid;grid-template-columns:repeat(4,1fr);gap:10px;
+    }
+    .tab{
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.04);
+      color:var(--muted);
+      padding:12px 10px;border-radius:14px;
+      font-weight:900;
+      display:flex;flex-direction:column;align-items:center;gap:4px;
+      user-select:none;cursor:pointer;
+    }
+    .tab.active{
+      color:var(--text);
+      border-color:rgba(78,161,255,.4);
+      background:linear-gradient(135deg, rgba(78,161,255,.18), rgba(124,92,255,.12));
+    }
+    .tab .ico{font-size:16px;line-height:1;}
+    .tab .lbl{font-size:12px;}
+    .toastwrap{position:fixed;left:0;right:0;top:0;z-index:50;pointer-events:none;}
+    .toaststack{
+      width:min(980px, 100%);margin:0 auto;
+      padding: max(10px, env(safe-area-inset-top)) 10px 10px;
+      display:flex;flex-direction:column;gap:8px;
+    }
+    .toast{
+      pointer-events:none;
+      padding:10px 12px;border-radius:14px;
+      background:rgba(0,0,0,.55);
+      border:1px solid rgba(255,255,255,.10);
+      box-shadow:0 12px 35px rgba(0,0,0,.40);
+      color:var(--text);
+      display:flex;gap:10px;align-items:flex-start;
+    }
+    .toast .dot{width:10px;height:10px;border-radius:50%;margin-top:4px;background:var(--accent);}
+    .toast.good .dot{background:var(--good);}
+    .toast.bad .dot{background:var(--bad);}
+    .toast.warn .dot{background:var(--warn);}
+    .toast .msg{font-size:13px;line-height:1.25;}
+    .inline{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+    .input{
+      width:100%;box-sizing:border-box;border-radius:12px;
+      border:1px solid var(--border);background:rgba(0,0,0,.22);
+      color:var(--text);padding:10px 12px;font-family:var(--sans);
+      outline:none;
+    }
+    .input:focus{border-color:rgba(78,161,255,.45);}
+    .twocol{display:grid;grid-template-columns: 1fr 1fr;gap:10px;}
+    @media (min-width:720px){
+      .content{padding-bottom:92px;}
+      .grid.cols2{grid-template-columns:1.2fr .8fr;}
+      .grid.cols3{grid-template-columns:1fr 1fr 1fr;}
+    }
+    .footnote{color:var(--muted);font-size:12px;line-height:1.3;margin-top:10px;}
+    .badge{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:6px 10px;border-radius:999px;
+      border:1px solid var(--border);background:rgba(255,255,255,.05);
+      font-size:12px;font-weight:900;
+    }
+    .badge .b{width:8px;height:8px;border-radius:50%;}
+    .badge.good .b{background:var(--good);}
+    .badge.bad .b{background:var(--bad);}
+    .badge.warn .b{background:var(--warn);}
+    .badge.neutral .b{background:var(--accent);}
+    .table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:12px;
+      margin-top:8px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      overflow:hidden;
+    }
+    .table th,.table td{
+      padding:10px 10px;
+      border-bottom:1px solid var(--border);
+      text-align:left;
+      font-variant-numeric: tabular-nums;
+    }
+    .table th{color:var(--muted);font-weight:900;background:rgba(255,255,255,.03);}
+    .table tr:last-child td{border-bottom:none;}
+    .chip{
+      font-size:12px;font-weight:900;padding:5px 8px;border-radius:999px;
+      border:1px solid var(--border);background:rgba(0,0,0,.20);
+      color:var(--text);
+      display:inline-flex;align-items:center;gap:6px;
+    }
+    .chip.up{border-color:rgba(61,220,151,.35);background:rgba(61,220,151,.10);}
+    .chip.down{border-color:rgba(255,91,110,.35);background:rgba(255,91,110,.10);}
+  </style>
 </head>
 <body>
+  <div class="toastwrap" aria-live="polite" aria-atomic="true">
+    <div class="toaststack" id="toaststack"></div>
+  </div>
 
-    <div class="live-bar">
-        <div class="live-track" id="live-feed"></div>
+  <div class="app">
+    <div class="topbar">
+      <div class="row">
+        <div class="pill">
+          <div class="k">Money</div>
+          <div class="v mono" id="money">$0.00</div>
+        </div>
+        <div class="pill energy">
+          <div class="k">Energy</div>
+          <div class="v mono" id="energy">0/0 <small id="energySub"></small></div>
+        </div>
+        <div class="pill">
+          <div class="k">Level</div>
+          <div class="v mono" id="level">1</div>
+        </div>
+        <div class="space"></div>
+        <button class="btn primary" id="saveBtn">Save</button>
+      </div>
     </div>
 
-    <header>
-        <div class="logo">
-            <span>CASE</span><span>BATTLE</span>
+    <div class="content">
+      <!-- HOME -->
+      <section id="tab-home" class="grid cols2">
+        <div class="card">
+          <h2>Work & Progress</h2>
+          <div class="kv">
+            <div class="k">Odd job payout</div>
+            <div class="v mono" id="oddJobPayout">$0.00</div>
+          </div>
+          <div class="kv">
+            <div class="k">Energy cost</div>
+            <div class="v mono" id="oddJobCost">0</div>
+          </div>
+          <div class="kv">
+            <div class="k">XP per job</div>
+            <div class="v mono" id="oddJobXP">0</div>
+          </div>
+          <div class="hr"></div>
+          <div class="actions">
+            <button class="btn good" id="oddJobBtn">Do Odd Job</button>
+            <button class="btn warn" id="claimOfflineBtn" title="Applies on load, this just shows summary">Offline Summary</button>
+          </div>
+          <div class="sub" id="homeHint"></div>
+          <div class="hr"></div>
+          <div class="kv">
+            <div class="k">Net worth</div>
+            <div class="v mono" id="netWorth">$0.00</div>
+          </div>
+          <div class="kv">
+            <div class="k">Passive income</div>
+            <div class="v mono" id="passiveRate">$0.00 / min</div>
+          </div>
+          <div class="kv">
+            <div class="k">Upkeep risk</div>
+            <div class="v mono" id="riskTag">Low</div>
+          </div>
+          <div class="hr"></div>
+          <h2>Upgrades</h2>
+          <div class="list" id="upgradeList"></div>
+          <div class="footnote">Tip: businesses make money while you wait, but they can also cost maintenance. Don’t overextend.</div>
         </div>
-        <div class="balance-wrap" onclick="addMoney()">
-            <div class="balance-val" id="balance">0.00</div>
-            <div class="balance-add"><i class="fa-solid fa-plus"></i></div>
-        </div>
-    </header>
 
-    <div id="view-home" class="content">
-        <div class="section-title"><i class="fa-solid fa-fire"></i> Популярные кейсы</div>
-        <div class="cases-grid" id="cases-list"></div>
+        <div class="card">
+          <h2>Achievements</h2>
+          <div class="sub">Small goals that boost your reputation (and unlock better bank terms).</div>
+          <div class="hr"></div>
+          <div class="list" id="achList"></div>
+          <div class="hr"></div>
+          <h2>Settings</h2>
+          <div class="kv">
+            <div class="k">Save status</div>
+            <div class="v" id="saveStatus"><span class="badge neutral"><span class="b"></span> OK</span></div>
+          </div>
+          <div class="kv">
+            <div class="k">Last seen</div>
+            <div class="v mono" id="lastSeen">—</div>
+          </div>
+          <div class="kv">
+            <div class="k">Active event</div>
+            <div class="v" id="eventBadge">—</div>
+          </div>
+          <div class="hr"></div>
+          <div class="actions">
+            <button class="btn bad" id="resetBtn">Hard Reset</button>
+          </div>
+          <div class="footnote">Hard Reset clears local progress. If opened in Telegram, use Save first to export data.</div>
+        </div>
+      </section>
+
+      <!-- BUSINESS -->
+      <section id="tab-business" class="grid" style="display:none;">
+        <div class="card">
+          <h2>Businesses</h2>
+          <div class="sub">Buy businesses to generate passive income. Each has upkeep and occasional risk.</div>
+          <div class="hr"></div>
+          <div class="list" id="bizList"></div>
+          <div class="footnote">Maintenance happens periodically. Keep a cash buffer or you might be forced to sell assets at a bad time.</div>
+        </div>
+      </section>
+
+      <!-- BANK -->
+      <section id="tab-bank" class="grid cols2" style="display:none;">
+        <div class="card">
+          <h2>Deposit</h2>
+          <div class="sub">Earn daily interest. Safer than trading, slower than business expansion.</div>
+          <div class="hr"></div>
+          <div class="kv">
+            <div class="k">Deposit balance</div>
+            <div class="v mono" id="depBal">$0.00</div>
+          </div>
+          <div class="kv">
+            <div class="k">Daily interest rate</div>
+            <div class="v mono" id="depAPR">0.00%</div>
+          </div>
+          <div class="kv">
+            <div class="k">Deposit limit</div>
+            <div class="v mono" id="depLimit">$0.00</div>
+          </div>
+          <div class="hr"></div>
+          <div class="twocol">
+            <input class="input mono" id="depAmt" inputmode="decimal" placeholder="Amount (e.g., 50.00)" />
+            <button class="btn good" id="depBtn">Deposit</button>
+          </div>
+          <div class="twocol" style="margin-top:10px;">
+            <input class="input mono" id="wdAmt" inputmode="decimal" placeholder="Withdraw amount" />
+            <button class="btn" id="wdBtn">Withdraw</button>
+          </div>
+          <div class="footnote">Interest accrues over time (including offline), but capped and diminished to prevent time-cheating.</div>
+        </div>
+
+        <div class="card">
+          <h2>Loan</h2>
+          <div class="sub">Borrow money to invest, but late payments trigger penalties and reputation loss.</div>
+          <div class="hr"></div>
+          <div class="kv">
+            <div class="k">Loan principal</div>
+            <div class="v mono" id="loanPrin">$0.00</div>
+          </div>
+          <div class="kv">
+            <div class="k">Daily interest rate</div>
+            <div class="v mono" id="loanAPR">0.00%</div>
+          </div>
+          <div class="kv">
+            <div class="k">Next due</div>
+            <div class="v mono" id="loanDue">—</div>
+          </div>
+          <div class="kv">
+            <div class="k">Credit limit</div>
+            <div class="v mono" id="loanLimit">$0.00</div>
+          </div>
+          <div class="hr"></div>
+          <div class="twocol">
+            <input class="input mono" id="loanAmt" inputmode="decimal" placeholder="Borrow amount" />
+            <button class="btn warn" id="loanBtn">Take Loan</button>
+          </div>
+          <div class="twocol" style="margin-top:10px;">
+            <input class="input mono" id="payAmt" inputmode="decimal" placeholder="Pay amount" />
+            <button class="btn good" id="payBtn">Pay Loan</button>
+          </div>
+          <div class="footnote">Loan interest and due dates keep running. Missing payments hurts (and can drain cash automatically).</div>
+        </div>
+      </section>
+
+      <!-- MARKET -->
+      <section id="tab-market" class="grid cols2" style="display:none;">
+        <div class="card">
+          <h2>Market</h2>
+          <div class="sub">Trade assets with fees and spread. Prices can crash. Don’t assume infinite growth.</div>
+          <div class="hr"></div>
+          <div id="marketHeader" class="inline"></div>
+          <table class="table" aria-label="Market prices">
+            <thead>
+              <tr>
+                <th>Asset</th>
+                <th>Price</th>
+                <th>1m</th>
+                <th>Trend</th>
+                <th>Holdings</th>
+                <th>Value</th>
+              </tr>
+            </thead>
+            <tbody id="marketRows"></tbody>
+          </table>
+          <div class="footnote">Trades have a fee + spread. Large trades have extra slippage to reduce abuse.</div>
+        </div>
+
+        <div class="card">
+          <h2>Trade</h2>
+          <div class="sub">Select an asset, then buy or sell. Cooldown prevents rapid spam.</div>
+          <div class="hr"></div>
+          <div class="kv">
+            <div class="k">Selected</div>
+            <div class="v" id="selAsset">—</div>
+          </div>
+          <div class="kv">
+            <div class="k">Bid / Ask</div>
+            <div class="v mono" id="bidAsk">—</div>
+          </div>
+          <div class="kv">
+            <div class="k">Fee</div>
+            <div class="v mono" id="feeLine">—</div>
+          </div>
+          <div class="hr"></div>
+          <input class="input mono" id="tradeQty" inputmode="decimal" placeholder="Quantity (e.g., 0.5)" />
+          <div class="actions" style="margin-top:10px;">
+            <button class="btn good" id="buyBtn">Buy</button>
+            <button class="btn bad" id="sellBtn">Sell</button>
+          </div>
+          <div class="hr"></div>
+          <div class="sub" id="tradeHint"></div>
+          <div class="footnote">Risk management: consider keeping some cash, and use deposits for stability.</div>
+        </div>
+      </section>
     </div>
 
-    <div id="view-battles" class="content hidden">
-        <div class="section-title"><i class="fa-solid fa-swords"></i> Батлы</div>
-        <div style="background: #1b1e28; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px;">
-            <p style="color: #6e7485; font-size: 13px; margin-bottom: 15px;">Создай битву 1 на 1 против бота</p>
-            <button class="action-btn btn-green" onclick="startBattle()">Создать за 100.00</button>
-        </div>
-
-        <div id="battle-area" class="hidden">
-            <div class="battle-ui">
-                <div class="battle-col" id="col-user">
-                    <div class="col-header">
-                        <img id="battle-user-ava" src="" class="col-avatar">
-                        <span style="font-size: 12px; font-weight: bold; color:#fff">YOU</span>
-                        <span class="text-green" id="score-user">0.00</span>
-                    </div>
-                </div>
-                <div class="battle-col" id="col-bot">
-                    <div class="col-header">
-                        <img src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png" class="col-avatar">
-                        <span style="font-size: 12px; font-weight: bold; color:#fff">BOT</span>
-                        <span class="text-green" id="score-bot">0.00</span>
-                    </div>
-                </div>
-            </div>
-            <div id="battle-res" style="text-align: center; margin-top: 15px; font-size: 22px; font-weight: 900; text-transform: uppercase;"></div>
-        </div>
+    <div class="tabs" role="navigation" aria-label="Bottom navigation">
+      <div class="bar">
+        <div class="tab active" data-tab="home"><div class="ico">🏠</div><div class="lbl">Home</div></div>
+        <div class="tab" data-tab="business"><div class="ico">🏭</div><div class="lbl">Business</div></div>
+        <div class="tab" data-tab="bank"><div class="ico">🏦</div><div class="lbl">Bank</div></div>
+        <div class="tab" data-tab="market"><div class="ico">📈</div><div class="lbl">Market</div></div>
+      </div>
     </div>
+  </div>
 
-    <div id="view-profile" class="content hidden">
-        <div style="text-align: center; margin-bottom: 30px;">
-            <img id="profile-ava" src="" style="width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--accent-purple); padding: 3px;">
-            <h2 id="profile-name" style="margin-top: 10px; font-size: 20px;">User</h2>
-            <div style="color: #6e7485; font-size: 12px; margin-top: 5px;">ID: 7656119...</div>
-        </div>
-        <div class="section-title"><i class="fa-solid fa-box"></i> Инвентарь</div>
-        <div class="cases-grid" id="inventory-list" style="grid-template-columns: repeat(3, 1fr); gap: 8px;"></div>
-    </div>
+  <script>
+  (() => {
+    "use strict";
 
-    <div class="roulette-modal" id="modal">
-        <div class="roulette-container">
-            <div class="roulette-pointer"></div>
-            <div class="roulette-strip" id="strip"></div>
-        </div>
-        
-        <div class="win-display" id="win-block">
-            <div style="color: #6e7485; font-size: 14px; margin-bottom: 10px; text-transform: uppercase; font-weight: 600;">Вы выиграли</div>
-            <div class="win-img-wrapper">
-                <img id="win-img" src="" class="win-img">
-            </div>
-            <div id="win-name" class="win-name">AK-47 | Asiimov</div>
-            <div id="win-price" class="win-price">4500.00</div>
-            
-            <button class="action-btn btn-green" onclick="closeModal()">В инвентарь</button>
-            <button class="action-btn btn-sell" onclick="sellItem()">Продать</button>
-        </div>
-    </div>
+    // =========================================================
+    // Telegram WebApp integration (no external scripts)
+    // =========================================================
+    const TWA = window.Telegram?.WebApp;
+    const devMode = false; // REQUIRED: OFF by default (no cheats enabled)
 
-    <nav class="nav-bar">
-        <div class="nav-item active" onclick="switchTab('home', this)">
-            <i class="fa-solid fa-box-open"></i>
-            <span>Главная</span>
-        </div>
-        <div class="nav-item" onclick="switchTab('battles', this)">
-            <i class="fa-solid fa-users"></i>
-            <span>Батлы</span>
-        </div>
-        <div class="nav-item" onclick="switchTab('home', this)">
-             <div class="nav-center">
-                <i class="fa-solid fa-plus"></i>
-            </div>
-        </div>
-        <div class="nav-item" onclick="switchTab('upgrades', this)">
-            <i class="fa-solid fa-arrow-up-right-dots"></i>
-            <span>Апгрейд</span>
-        </div>
-        <div class="nav-item" onclick="switchTab('profile', this)">
-            <i class="fa-solid fa-user"></i>
-            <span>Профиль</span>
-        </div>
-    </nav>
+    function applyTelegramTheme() {
+      const tp = TWA?.themeParams;
+      if (!tp) return;
+      // Map Telegram theme params onto our CSS variables (best-effort).
+      const root = document.documentElement;
+      // Telegram keys vary; these are commonly present.
+      const bg = tp.bg_color || tp.secondary_bg_color;
+      const text = tp.text_color;
+      const hint = tp.hint_color;
+      const accent = tp.button_color || tp.link_color;
+      const accentText = tp.button_text_color;
 
-<script>
-    const tg = window.Telegram.WebApp;
-    tg.ready();
-    tg.expand();
-    tg.setHeaderColor('#1b1e28');
+      if (bg) root.style.setProperty("--bg", bg);
+      if (text) root.style.setProperty("--text", text);
+      if (hint) root.style.setProperty("--muted", hint);
+      if (accent) root.style.setProperty("--accent", accent);
+      if (accentText) {
+        // Not directly used, but could be expanded.
+        root.style.setProperty("--accentText", accentText);
+      }
+    }
 
-    // --- MOCK DATA ---
-    // Используем реальные изображения скинов CS2 из Steam CDN
-    const SKINS = [
-        { name: "AWP | Dragon Lore", price: 150000, rarity: "r-gold", img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJD_9W7m5a0mvLwOq7cQFQq78dy27iR9tWmiQPj_0U9YmGid9eSI1c7MFvW_we6w-q618S575XAnCRj6yBw4X-OmAv330-J8wytYA/360fx360f" },
-        { name: "M4A4 | Howl", price: 120000, rarity: "r-red", img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-6kejhz2v_Nfz5H_uO1gb-Gw_alIImJwlRc7cF4n-SPpI-i3Aew_0o5YT2iJNfHclM5YQzU_gK7wO7mg8C0u5rKzCdg7yYk5XfUmEeyhQYMMLIki7Zt0g/360fx360f" },
-        { name: "AK-47 | Gold Arabesque", price: 80000, rarity: "r-gold", img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV09-5lpKKqPv9NLPF2G0D78Y_3r2Z8I2i0Qq1_kFsY2z1d9CWelI2ZQqF-gS9w-a8h5S5vJ3MzSF9-n51Yx0r-Z4/360fx360f" },
-        { name: "Karambit | Fade", price: 90000, rarity: "r-gold", img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLwJf0ebcZThQ6tCvq4GGqPP7I6vdk3lu-M1wmeyTyo78i0fvrxc5Mm_wI4fGcA89MlqB_FDrw-_ngpC5vpzJyyRiuSQm-z-DyBCA4k0T/360fx360f" },
-        { name: "Glock-18 | Fade", price: 40000, rarity: "r-purple", img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgposbaqKAxf0v73efTH9eO7fYK0m_7zO6-fz2oI7pEjiLjHpo6n3g3t_kFtYTz1I46UJAQ-Y13Xq1Xvxe_v0cW5vJzJmnR9-n51-q3gWvI/360fx360f" },
-        { name: "USP-S | Kill Confirmed", price: 15000, rarity: "r-red", img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpoo6m1FBRp3_bGcjhQ09-jq5WYh8j_OrfdqWhe5sN4mTEyT48t2r2xK60x2Q/360fx360f" },
-        { name: "AK-47 | Asiimov", price: 8000, rarity: "r-red", img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV092lnYmGm_PLP7LWnn8f65dw3OyS942l3AGy80s4ZDygJOSWclQ3Ml_Q-lO8xua-jJK0uJvKz3Jj6yRz4i7D30vgF82Fm4E/360fx360f" },
-        { name: "M4A1-S | Printstream", price: 12000, rarity: "r-red", img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-6kejhz2v_Nfz5H_uO1gb-Gw_alIImJwlRc7cF4n-SPpI-i3Aew_0o5YT2iJNfHclM5YQzU_gK7wO7mg8C0u5rKzCdg7yYk5XfUmEeyhQYMMLIki7Zt0g/360fx360f" },
-        { name: "P250 | Asiimov", price: 1500, rarity: "r-pink", img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpopujwezhz3fzcdD5D09Lhh5O0h_L4PbzXmG9u5Mx2gv2P9I_zj126lBE9YmD0LI6QJgI4M1rR_VG6w-a70Z606pydwXsw7iInt33UgVXp1iE6l2r4/360fx360f" },
-        { name: "AWP | Atheris", price: 1000, rarity: "r-blue", img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJU5cy4gYyaqPjxhFlc5cN5t-rN_Iv9nB21rxFqY2r7coKRIFQ9ZgvU-1Pox-fv1p68u5mfmHsy6Sgg-z-DyIVN_-M0/360fx360f" }
+    function telegramInit() {
+      if (!TWA) return;
+      try {
+        TWA.ready();
+        TWA.expand();
+        applyTelegramTheme();
+      } catch (_) {}
+    }
+
+    telegramInit();
+
+    // =========================================================
+    // Utilities
+    // =========================================================
+    const $ = (id) => document.getElementById(id);
+
+    function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+
+    // Parse user input like "123.45" into cents (integer). Returns null if invalid.
+    function parseMoneyToCents(str) {
+      if (typeof str !== "string") return null;
+      const s = str.trim().replace(/,/g, "");
+      if (!s) return null;
+      if (!/^\d+(\.\d{0,2})?$/.test(s)) return null;
+      const parts = s.split(".");
+      const dollars = parseInt(parts[0] || "0", 10);
+      const cents = parseInt((parts[1] || "0").padEnd(2, "0").slice(0,2), 10);
+      if (!Number.isFinite(dollars) || !Number.isFinite(cents)) return null;
+      const total = dollars * 100 + cents;
+      if (!Number.isSafeInteger(total) || total < 0) return null;
+      return total;
+    }
+
+    function formatCents(c) {
+      const sign = c < 0 ? "-" : "";
+      const v = Math.abs(c);
+      const dollars = Math.floor(v / 100);
+      const cents = v % 100;
+      return `${sign}$${dollars.toLocaleString(undefined)}.${String(cents).padStart(2, "0")}`;
+    }
+
+    function formatPct(p) { // p in basis points (1/100 of a percent) OR percent float? We'll use basis points.
+      // basis points -> percent string with 2 decimals
+      const pct = p / 100;
+      return `${pct.toFixed(2)}%`;
+    }
+
+    function nowMs() { return Date.now(); }
+
+    function safeInt(n, fallback = 0) {
+      return Number.isSafeInteger(n) ? n : fallback;
+    }
+
+    // Simple FNV-1a 32-bit hash (deterministic). Not cryptographic, but suitable for tamper detection.
+    function fnv1a32(str) {
+      let h = 0x811c9dc5;
+      for (let i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 0x01000193);
+      }
+      return (h >>> 0).toString(16).padStart(8, "0");
+    }
+
+    function isoTime(ms) {
+      try { return new Date(ms).toLocaleString(); } catch { return String(ms); }
+    }
+
+    // Debounce/lock for anti multi-click abuse
+    const actionLocks = new Map();
+    function withLock(key, ms, fn) {
+      const t = nowMs();
+      const last = actionLocks.get(key) || 0;
+      if (t - last < ms) return false;
+      actionLocks.set(key, t);
+      try { fn(); } catch (e) { console.error(e); toast("Something went wrong.", "bad"); }
+      return true;
+    }
+
+    // Toast notifications (non-blocking)
+    let toastSeq = 0;
+    function toast(msg, type = "neutral", ttl = 2400) {
+      const wrap = $("toaststack");
+      const el = document.createElement("div");
+      const id = ++toastSeq;
+      el.className = `toast ${type}`;
+      el.innerHTML = `<div class="dot"></div><div class="msg">${escapeHtml(msg)}</div>`;
+      wrap.prepend(el);
+      setTimeout(() => {
+        // Fade out
+        el.style.transition = "opacity .35s ease, transform .35s ease";
+        el.style.opacity = "0";
+        el.style.transform = "translateY(-6px)";
+        setTimeout(() => el.remove(), 380);
+      }, ttl);
+      return id;
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, (m) => (
+        m === "&" ? "&amp;" :
+        m === "<" ? "&lt;" :
+        m === ">" ? "&gt;" :
+        m === '"' ? "&quot;" : "&#39;"
+      ));
+    }
+
+    // =========================================================
+    // Game data / balance
+    // =========================================================
+    const SCHEMA_VERSION = 3;
+    const STORAGE_KEY = "b2m_save_v3";
+    const BACKUP_KEY  = "b2m_backup_v3";
+
+    const OFFLINE_CAP_SEC = 6 * 60 * 60; // 6 hours cap
+    const OFFLINE_DIMINISH_POW = 0.65;   // diminishing returns exponent (0..1)
+
+    const TICK_MS = 1000;
+    const PASSIVE_GRANULARITY_SEC = 10; // apply passive income every 10s to reduce spam & rounding drift
+    const MARKET_STEP_SEC = 5;
+    const EVENT_CHECK_SEC = 30;
+
+    // Trade units stored as milli-units (0.001 precision)
+    const UNIT_SCALE = 1000;
+
+    // Market fee + spread
+    const TRADE_FEE_BPS = 25;   // 0.25% fee
+    const SPREAD_BPS = 40;      // 0.40% spread total (bid lower, ask higher)
+    const SLIPPAGE_MAX_BPS = 120; // extra slippage up to 1.20% for huge trades
+    const TRADE_COOLDOWN_MS = 900;
+
+    // =========================================================
+    // State
+    // =========================================================
+    function defaultState() {
+      const t = nowMs();
+      return {
+        schemaVersion: SCHEMA_VERSION,
+        createdAt: t,
+        lastSeen: t,
+        suspicious: false,
+        // Money is integer cents (fixed point)
+        moneyCents: 0,
+
+        // Progression
+        level: 1,
+        xp: 0,
+        reputation: 0, // affects bank limits, loan rate; gained via achievements
+
+        // Energy system
+        energy: 30,
+        energyMax: 30,
+        energyRegenPerMin: 6, // energy per minute
+
+        // Home - odd job
+        oddJob: {
+          basePayoutCents: 75, // $0.75
+          payoutScaleBpsPerLevel: 60, // +0.60% per level
+          energyCost: 6,
+          xpGain: 5
+        },
+
+        // Upgrades (bought flags)
+        upgrades: {
+          betterTools: 0,    // increases odd job payout
+          coffee: 0,         // increases energy regen
+          nightCourses: 0,   // increases xp gain
+          budgeting: 0       // reduces business upkeep risk / bank fees slightly
+        },
+
+        // Businesses
+        businesses: {
+          lemonade: { owned: 0, unlocked: true },
+          delivery: { owned: 0, unlocked: false },
+          kiosk: { owned: 0, unlocked: false },
+          studio: { owned: 0, unlocked: false },
+          agency: { owned: 0, unlocked: false }
+        },
+
+        // Bank
+        bank: {
+          depositCents: 0,
+          depositDailyBps: 18, // 0.18% daily base
+          loanPrincipalCents: 0,
+          loanDailyBps: 45, // 0.45% daily base
+          loanDueAt: 0, // ms timestamp
+          lateDays: 0
+        },
+
+        // Market
+        market: {
+          selected: "GOLD",
+          assets: {
+            GOLD: makeAsset("Gold", 238_00, 12, 0.00035, 0.018),
+            OIL:  makeAsset("Oil",   82_00, 18, 0.00045, 0.028),
+            CRYP: makeAsset("Crypto", 62_00, 30, 0.00070, 0.060),
+            STK:  makeAsset("Stocks", 45_00, 14, 0.00040, 0.022)
+          },
+          holdings: { GOLD: 0, OIL: 0, CRYP: 0, STK: 0 }, // milli-units
+          // for 1-minute deltas
+          history: [],
+          lastMarketStep: t
+        },
+
+        // Events
+        events: {
+          active: null, // { id, name, kind, mult, endsAt, startedAt, note }
+          lastEventAt: t
+        },
+
+        // Stats for achievements & integrity
+        stats: {
+          lifetimeEarnedCents: 0,
+          totalTrades: 0,
+          totalBusinessesBought: 0,
+          oddJobsDone: 0,
+          maxMoneyCents: 0,
+          lastOfflineAwardCents: 0,
+          lastOfflineSec: 0
+        },
+
+        achievements: {
+          firstDollar: false,
+          firstBiz: false,
+          trader: false,
+          saver: false,
+          level5: false,
+          netWorth10k: false,
+          netWorth100k: false
+        },
+
+        // Ledger
+        ledgerSeq: 0,
+        lastTxAt: t,
+
+        // Integrity
+        checksum: ""
+      };
+    }
+
+    function makeAsset(name, startPriceCents, vol, drift, meanRevert) {
+      // vol: base volatility in bps per step
+      // drift: small baseline drift (fraction per step)
+      // meanRevert: pullback strength toward an anchor
+      return {
+        name,
+        priceCents: startPriceCents,
+        anchorCents: startPriceCents,
+        volBps: vol,
+        drift,
+        meanRevert,
+        trend: 0, // -1..+1 internal
+        lastStepAt: nowMs(),
+        oneMinAgoCents: startPriceCents,
+        oneMinDeltaBps: 0
+      };
+    }
+
+    let S = defaultState();
+    let uiTab = "home";
+
+    // =========================================================
+    // Integrity / Saving
+    // =========================================================
+    function coreForChecksum(state) {
+      // Include key fields that should not be trivially tampered without detection.
+      // Avoid volatile timestamps except lastSeen (still relevant).
+      const core = {
+        schemaVersion: state.schemaVersion,
+        createdAt: state.createdAt,
+        lastSeen: state.lastSeen,
+        moneyCents: state.moneyCents,
+        level: state.level,
+        xp: state.xp,
+        reputation: state.reputation,
+        energy: state.energy,
+        energyMax: state.energyMax,
+        energyRegenPerMin: state.energyRegenPerMin,
+        upgrades: state.upgrades,
+        businesses: state.businesses,
+        bank: state.bank,
+        market: {
+          selected: state.market.selected,
+          assets: Object.fromEntries(Object.entries(state.market.assets).map(([k,a]) => [k, {
+            priceCents: a.priceCents,
+            anchorCents: a.anchorCents,
+            volBps: a.volBps,
+            drift: a.drift,
+            meanRevert: a.meanRevert,
+            trend: a.trend,
+            oneMinAgoCents: a.oneMinAgoCents,
+            oneMinDeltaBps: a.oneMinDeltaBps
+          }])),
+          holdings: state.market.holdings
+        },
+        events: state.events,
+        stats: state.stats,
+        achievements: state.achievements,
+        ledgerSeq: state.ledgerSeq
+      };
+      return core;
+    }
+
+    function computeChecksum(state) {
+      const core = coreForChecksum(state);
+      const str = JSON.stringify(core);
+      return fnv1a32(str);
+    }
+
+    function setChecksum(state) {
+      state.checksum = computeChecksum(state);
+    }
+
+    function saveLocal() {
+      // Create backup before overwriting.
+      try {
+        const cur = localStorage.getItem(STORAGE_KEY);
+        if (cur) localStorage.setItem(BACKUP_KEY, cur);
+      } catch (_) {}
+
+      setChecksum(S);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(S));
+        updateSaveStatus(false, S.suspicious);
+      } catch (e) {
+        console.error(e);
+        toast("Local save failed (storage full?)", "bad");
+      }
+    }
+
+    function loadLocal() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return false;
+      try {
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== "object") return false;
+
+        // Basic schema handling
+        if (parsed.schemaVersion !== SCHEMA_VERSION) {
+          // If mismatch, reset (or attempt minimal migration). Keep it simple and safe.
+          toast("Save schema changed. Starting fresh.", "warn");
+          return false;
+        }
+
+        // Verify checksum
+        const expected = computeChecksum(parsed);
+        if (parsed.checksum !== expected) {
+          // Suspicious: try rollback to backup
+          const backupRaw = localStorage.getItem(BACKUP_KEY);
+          if (backupRaw) {
+            try {
+              const backup = JSON.parse(backupRaw);
+              const bExpected = computeChecksum(backup);
+              if (backup.checksum === bExpected) {
+                S = backup;
+                S.suspicious = true;
+                toast("Suspicious save detected. Restored last valid backup.", "warn", 3200);
+                saveLocal(); // re-save cleanly
+                return true;
+              }
+            } catch (_) {}
+          }
+          // No valid backup: apply penalty and continue
+          const penalty = Math.floor(parsed.moneyCents * 0.10);
+          parsed.moneyCents = safeInt(parsed.moneyCents - penalty, 0);
+          if (parsed.moneyCents < 0) parsed.moneyCents = 0;
+          parsed.suspicious = true;
+          parsed.checksum = computeChecksum(parsed);
+          S = parsed;
+          toast("Suspicious save detected. Applied 10% cash penalty.", "warn", 3200);
+          saveLocal();
+          return true;
+        }
+
+        S = parsed;
+        S.suspicious = !!S.suspicious;
+        return true;
+      } catch (e) {
+        console.error(e);
+        return false;
+      }
+    }
+
+    function updateSaveStatus(saved, suspicious) {
+      const el = $("saveStatus");
+      if (!el) return;
+      if (suspicious) {
+        el.innerHTML = `<span class="badge warn"><span class="b"></span> Suspicious</span>`;
+      } else if (saved) {
+        el.innerHTML = `<span class="badge good"><span class="b"></span> Saved</span>`;
+      } else {
+        el.innerHTML = `<span class="badge neutral"><span class="b"></span> OK</span>`;
+      }
+    }
+
+    // Telegram export
+    function exportToTelegram() {
+      if (!TWA?.sendData) {
+        toast("Telegram not available — saved locally.", "neutral");
+        return;
+      }
+      // Send minimal payload; still include checksum & schema version.
+      const payload = {
+        schemaVersion: S.schemaVersion,
+        exportedAt: nowMs(),
+        state: S
+      };
+      try {
+        TWA.sendData(JSON.stringify(payload));
+        toast("Sent save data to Telegram.", "good");
+      } catch (e) {
+        console.error(e);
+        toast("Failed to send data to Telegram.", "bad");
+      }
+    }
+
+    // =========================================================
+    // Ledger / transact (ALL money ops go through here)
+    // =========================================================
+    function canGoNegative() {
+      return S.bank.loanPrincipalCents > 0; // only allow negative if a loan is active (short overdraft)
+    }
+
+    function roundCents(n) {
+      // ensure integer cents
+      if (!Number.isFinite(n)) return null;
+      const v = Math.trunc(n);
+      if (!Number.isSafeInteger(v)) return null;
+      return v;
+    }
+
+    function transact(deltaCents, meta) {
+      // meta: { type, note, allowNegative?, clampToZero? }
+      const d = roundCents(deltaCents);
+      if (d === null) return { ok:false, err:"Invalid amount" };
+
+      if (Math.abs(d) > 2_000_000_000_00) return { ok:false, err:"Amount too large" }; // sanity
+
+      const before = S.moneyCents;
+      let after = before + d;
+
+      if (!Number.isSafeInteger(after)) return { ok:false, err:"Overflow" };
+
+      const allowNeg = meta?.allowNegative === true || canGoNegative();
+      if (!allowNeg && after < 0) return { ok:false, err:"Insufficient funds" };
+
+      // If negative allowed, still cap how negative you can go to prevent abuse
+      if (allowNeg) {
+        const overdraftCap = -Math.floor(Math.max(0, S.bank.loanPrincipalCents) * 0.15); // up to 15% of principal
+        if (after < overdraftCap) return { ok:false, err:"Overdraft cap reached" };
+      }
+
+      // Optional clamp
+      if (meta?.clampToZero && after < 0) after = 0;
+
+      S.moneyCents = after;
+      S.ledgerSeq = safeInt(S.ledgerSeq + 1, S.ledgerSeq);
+      S.lastTxAt = nowMs();
+
+      // stats
+      if (d > 0) S.stats.lifetimeEarnedCents = safeInt(S.stats.lifetimeEarnedCents + d, S.stats.lifetimeEarnedCents);
+      S.stats.maxMoneyCents = Math.max(S.stats.maxMoneyCents, S.moneyCents);
+
+      // Validate numeric invariants
+      if (!Number.isSafeInteger(S.moneyCents)) {
+        // rollback
+        S.moneyCents = before;
+        return { ok:false, err:"State corruption prevented" };
+      }
+      return { ok:true };
+    }
+
+    // =========================================================
+    // Economy calculations
+    // =========================================================
+    function levelFromProgress(netWorthCents, xp) {
+      // Smooth curve: primarily net worth + XP.
+      // level increases are meaningful in first 30 minutes.
+      const nw = Math.max(0, netWorthCents);
+      const score = Math.sqrt(nw / 100) * 3 + Math.sqrt(Math.max(0, xp)) * 1.2;
+      return clamp(Math.floor(1 + score / 6), 1, 99);
+    }
+
+    function getDepositLimitCents() {
+      // Scales with level and reputation
+      const base = 200_00; // $200
+      const lvl = S.level;
+      const rep = S.reputation;
+      const limit = base + (lvl * 180_00) + (rep * 120_00);
+      return clamp(limit, 200_00, 250_000_00); // up to $250k
+    }
+
+    function getLoanLimitCents() {
+      const lvl = S.level;
+      const rep = S.reputation;
+      // Conservative limits to prevent runaway early.
+      const base = 150_00; // $150
+      const limit = base + lvl * 220_00 + rep * 180_00;
+      // Also cap based on net worth to reduce reckless borrowing
+      const nw = netWorthCents();
+      const nwCap = Math.floor(nw * 1.2 + 300_00);
+      return clamp(Math.min(limit, nwCap), 150_00, 150_000_00); // up to $150k
+    }
+
+    function getDepositDailyBps() {
+      // Slightly better with level, slightly worse with suspicious flag
+      const base = 18; // 0.18%
+      const lvlBonus = Math.min(14, Math.floor(S.level * 0.8));
+      const repBonus = Math.min(10, Math.floor(S.reputation * 0.6));
+      const penalty = S.suspicious ? 6 : 0;
+      return clamp(base + lvlBonus + repBonus - penalty, 10, 45); // 0.10%..0.45% daily
+    }
+
+    function getLoanDailyBps() {
+      const base = 45; // 0.45%
+      const repDiscount = Math.min(18, Math.floor(S.reputation * 0.9));
+      const lvlDiscount = Math.min(10, Math.floor(S.level * 0.5));
+      const latePenalty = Math.min(30, S.bank.lateDays * 2);
+      const suspiciousPenalty = S.suspicious ? 10 : 0;
+      return clamp(base - repDiscount - lvlDiscount + latePenalty + suspiciousPenalty, 25, 110); // 0.25%..1.10%
+    }
+
+    function energyTick(dtSec) {
+      const regenPerSec = (S.energyRegenPerMin / 60);
+      const add = regenPerSec * dtSec;
+      // Keep energy integer for simplicity; accumulate fractional in a hidden buffer
+      if (!S._energyFrac) S._energyFrac = 0;
+      S._energyFrac += add;
+      const whole = Math.floor(S._energyFrac);
+      if (whole > 0) {
+        S.energy = clamp(S.energy + whole, 0, S.energyMax);
+        S._energyFrac -= whole;
+      }
+    }
+
+    function oddJobPayoutCents() {
+      const base = S.oddJob.basePayoutCents;
+      const lvlBonusBps = S.oddJob.payoutScaleBpsPerLevel * (S.level - 1);
+      const toolBonusBps = 600 * S.upgrades.betterTools; // +6% each
+      const eventMult = currentEventIncomeMult();
+      const payout = Math.floor(base * (1 + (lvlBonusBps + toolBonusBps) / 10_000) * eventMult);
+      return clamp(payout, 10, 500_00);
+    }
+
+    function oddJobEnergyCost() {
+      const base = S.oddJob.energyCost;
+      const coffee = S.upgrades.coffee;
+      // Coffee makes you more efficient: slight reduction in cost
+      const reduced = Math.max(3, base - Math.floor(coffee / 2));
+      return reduced;
+    }
+
+    function oddJobXPGain() {
+      const base = S.oddJob.xpGain;
+      const courses = S.upgrades.nightCourses;
+      const xp = base + courses * 2;
+      return clamp(xp, 3, 30);
+    }
+
+    function businessDefs() {
+      // Designed to stay engaging for ~30 minutes: early affordable, then scaling.
+      // incomePerMinCents: base income per minute per business
+      // upkeepPerMinCents: cost per minute (tax/maintenance)
+      // riskBpsPerHour: chance per hour of a negative event per business (small)
+      // unlockLevel: required level
+      return [
+        { id:"lemonade", name:"Lemonade Stand", unlockLevel:1, costCents: 25_00, incomePerMinCents: 22, upkeepPerMinCents: 4, riskBpsPerHour: 40 },
+        { id:"delivery", name:"Bike Delivery", unlockLevel:2, costCents: 120_00, incomePerMinCents: 90, upkeepPerMinCents: 18, riskBpsPerHour: 55 },
+        { id:"kiosk", name:"Phone Accessories Kiosk", unlockLevel:4, costCents: 650_00, incomePerMinCents: 410, upkeepPerMinCents: 95, riskBpsPerHour: 70 },
+        { id:"studio", name:"Design Studio", unlockLevel:7, costCents: 3_800_00, incomePerMinCents: 2_250, upkeepPerMinCents: 520, riskBpsPerHour: 85 },
+        { id:"agency", name:"Marketing Agency", unlockLevel:10, costCents: 12_500_00, incomePerMinCents: 7_600, upkeepPerMinCents: 1_850, riskBpsPerHour: 95 }
+      ];
+    }
+
+    function unlockBusinessesByLevel() {
+      for (const def of businessDefs()) {
+        if (S.level >= def.unlockLevel) S.businesses[def.id].unlocked = true;
+      }
+    }
+
+    function budgetingRiskReduction() {
+      // budgeting upgrade reduces risk & upkeep slightly
+      const b = S.upgrades.budgeting;
+      return clamp(1 - b * 0.04, 0.82, 1);
+    }
+
+    function currentEventIncomeMult() {
+      const ev = S.events.active;
+      if (!ev || nowMs() > ev.endsAt) return 1;
+      if (ev.kind === "income") return ev.mult;
+      if (ev.kind === "mixed") return ev.mult;
+      return 1;
+    }
+
+    function currentEventVolMult() {
+      const ev = S.events.active;
+      if (!ev || nowMs() > ev.endsAt) return 1;
+      if (ev.kind === "vol") return ev.mult;
+      if (ev.kind === "mixed") return ev.mult;
+      return 1;
+    }
+
+    function passivePerMinCents() {
+      let gross = 0;
+      let upkeep = 0;
+      const riskMult = budgetingRiskReduction();
+      for (const def of businessDefs()) {
+        const owned = S.businesses[def.id].owned || 0;
+        if (owned <= 0) continue;
+        gross += def.incomePerMinCents * owned;
+        upkeep += Math.floor(def.upkeepPerMinCents * owned * riskMult);
+      }
+      // Event affects gross (income), not upkeep
+      gross = Math.floor(gross * currentEventIncomeMult());
+      return Math.max(0, gross - upkeep);
+    }
+
+    function upkeepRiskLabel() {
+      // Aggregate approximate risk from businesses
+      let r = 0;
+      const rr = budgetingRiskReduction();
+      for (const def of businessDefs()) {
+        const owned = S.businesses[def.id].owned || 0;
+        if (owned <= 0) continue;
+        r += (def.riskBpsPerHour * owned) * rr;
+      }
+      if (r <= 80) return { text: "Low", cls:"good" };
+      if (r <= 180) return { text: "Medium", cls:"warn" };
+      return { text: "High", cls:"bad" };
+    }
+
+    function netWorthCents() {
+      // money + deposit - loan + market holdings value + business resale (partial)
+      let nw = S.moneyCents + S.bank.depositCents - S.bank.loanPrincipalCents;
+      // Market
+      for (const [k, qtyMilli] of Object.entries(S.market.holdings)) {
+        const a = S.market.assets[k];
+        if (!a) continue;
+        const value = Math.floor((qtyMilli * a.priceCents) / UNIT_SCALE);
+        nw += value;
+      }
+      // Business resale value: 55% of purchase costs
+      let resale = 0;
+      for (const def of businessDefs()) {
+        const owned = S.businesses[def.id].owned || 0;
+        if (owned > 0) resale += Math.floor(def.costCents * owned * 0.55);
+      }
+      nw += resale;
+      return nw;
+    }
+
+    // =========================================================
+    // Upgrades
+    // =========================================================
+    function upgradeDefs() {
+      // Costs scale to keep engagement; effects feel meaningful.
+      return [
+        {
+          id:"betterTools",
+          name:"Better Tools",
+          desc:"Odd jobs pay more (+6% each).",
+          baseCostCents: 40_00,
+          costMult: 1.85,
+          max: 8,
+          canBuy: () => true,
+          onBuy: () => {}
+        },
+        {
+          id:"coffee",
+          name:"Coffee Habit",
+          desc:"Regenerate energy faster (+1/min) and slightly reduce odd job energy cost.",
+          baseCostCents: 55_00,
+          costMult: 1.7,
+          max: 10,
+          canBuy: () => true,
+          onBuy: () => { S.energyRegenPerMin = clamp(S.energyRegenPerMin + 1, 3, 30); }
+        },
+        {
+          id:"nightCourses",
+          name:"Night Courses",
+          desc:"Gain more XP from odd jobs (+2 XP each).",
+          baseCostCents: 95_00,
+          costMult: 1.9,
+          max: 6,
+          canBuy: () => S.level >= 2,
+          onBuy: () => {}
+        },
+        {
+          id:"budgeting",
+          name:"Budgeting 101",
+          desc:"Reduce business upkeep & risk (−4% each). Slightly better bank terms.",
+          baseCostCents: 160_00,
+          costMult: 2.05,
+          max: 6,
+          canBuy: () => S.level >= 3,
+          onBuy: () => {}
+        }
+      ];
+    }
+
+    function upgradeCostCents(def) {
+      const owned = S.upgrades[def.id] || 0;
+      const cost = Math.floor(def.baseCostCents * Math.pow(def.costMult, owned));
+      // Price floors to avoid becoming too cheap via rounding
+      return clamp(cost, def.baseCostCents, 999_999_00);
+    }
+
+    // =========================================================
+    // Market simulation
+    // =========================================================
+    function randUnit() {
+      // deterministic-ish but not seeded. Good enough for local play.
+      return Math.random();
+    }
+
+    function randNorm() {
+      // Approx normal via Box-Muller
+      const u = Math.max(1e-9, randUnit());
+      const v = Math.max(1e-9, randUnit());
+      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    }
+
+    function marketStep() {
+      const t = nowMs();
+      const volMult = currentEventVolMult();
+
+      // one-minute tracking (12 steps * 5s = 60s)
+      S.market.history.push({
+        t,
+        prices: Object.fromEntries(Object.entries(S.market.assets).map(([k,a]) => [k, a.priceCents]))
+      });
+      const cutoff = t - 60_000;
+      while (S.market.history.length > 0 && S.market.history[0].t < cutoff) S.market.history.shift();
+
+      for (const [sym, a] of Object.entries(S.market.assets)) {
+        // Calculate 1m ago price if possible
+        let oneMinAgo = a.priceCents;
+        if (S.market.history.length > 0) {
+          // find oldest near 60s ago
+          oneMinAgo = S.market.history[0].prices[sym] ?? a.priceCents;
+        }
+        a.oneMinAgoCents = oneMinAgo;
+
+        // Trend: slow moving factor, mean-reverting
+        const trendDrift = (randNorm() * 0.05) - (a.trend * 0.08);
+        a.trend = clamp(a.trend + trendDrift, -1, 1);
+
+        // Mean reversion toward anchor (prevents infinite drift)
+        const reversion = (a.anchorCents - a.priceCents) * a.meanRevert;
+
+        // Noise: volatility in bps
+        const shockBps = (randNorm() * a.volBps) * volMult;
+        const shock = a.priceCents * (shockBps / 10_000);
+
+        // Drift: tiny baseline drift affected by trend (trend can be negative too)
+        const drift = a.priceCents * (a.drift + a.trend * a.drift * 1.3);
+
+        // Apply and clamp
+        let next = a.priceCents + reversion + shock + drift;
+
+        // Occasional anchor update to simulate regime changes (prevents stale)
+        if (randUnit() < 0.02) {
+          const shift = (randNorm() * 0.015) * a.anchorCents;
+          a.anchorCents = clamp(Math.round(a.anchorCents + shift), Math.round(a.anchorCents * 0.7), Math.round(a.anchorCents * 1.4));
+        }
+
+        // Price floors
+        next = clamp(Math.round(next), 5, 2_000_000_00);
+
+        // Crash/boom micro-events (rare) to add pullbacks and risk
+        if (randUnit() < 0.008) {
+          const swing = (randNorm() * 0.06); // ±6%
+          next = clamp(Math.round(next * (1 + swing)), 5, 2_000_000_00);
+        }
+
+        a.priceCents = next;
+
+        // 1m delta in bps
+        const delta = a.priceCents - a.oneMinAgoCents;
+        a.oneMinDeltaBps = a.oneMinAgoCents > 0 ? Math.round((delta / a.oneMinAgoCents) * 10_000) : 0;
+      }
+
+      S.market.lastMarketStep = t;
+    }
+
+    function bidAskFor(sym) {
+      const a = S.market.assets[sym];
+      if (!a) return { bid: 0, ask: 0 };
+      // Spread: bid lower, ask higher
+      const half = SPREAD_BPS / 2;
+      const bid = Math.max(1, Math.floor(a.priceCents * (1 - half / 10_000)));
+      const ask = Math.max(1, Math.ceil(a.priceCents * (1 + half / 10_000)));
+      return { bid, ask };
+    }
+
+    function tradeFeeCents(notionalCents) {
+      return Math.max(1, Math.floor(notionalCents * (TRADE_FEE_BPS / 10_000)));
+    }
+
+    function slippageBpsForNotional(notionalCents) {
+      // Extra slippage increases with trade size (relative to cash + deposit + 1)
+      const denom = Math.max(50_00, S.moneyCents + Math.floor(S.bank.depositCents * 0.35) + 1);
+      const ratio = clamp(notionalCents / denom, 0, 2);
+      const extra = Math.floor(SLIPPAGE_MAX_BPS * Math.pow(ratio, 1.2));
+      return clamp(extra, 0, SLIPPAGE_MAX_BPS);
+    }
+
+    function applySlippage(priceCents, slipBps, side) {
+      // side: "buy" increases price, "sell" decreases price
+      if (slipBps <= 0) return priceCents;
+      if (side === "buy") return Math.ceil(priceCents * (1 + slipBps / 10_000));
+      return Math.floor(priceCents * (1 - slipBps / 10_000));
+    }
+
+    // =========================================================
+    // Events
+    // =========================================================
+    const EVENT_POOL = [
+      { id:"boom", name:"Market Boom", kind:"vol", mult:1.35, durMin:[3,5], note:"Volatility rises. Big moves both ways." },
+      { id:"crash", name:"Risk-Off Panic", kind:"vol", mult:1.6, durMin:[2,4], note:"Volatility spikes; mean reversion strengthens." },
+      { id:"lucky", name:"Lucky Break", kind:"income", mult:1.25, durMin:[3,5], note:"Odd jobs + businesses earn more." },
+      { id:"audit", name:"Tax Audit", kind:"income", mult:0.85, durMin:[3,6], note:"Income dips. Keep calm." },
+      { id:"policy", name:"Rate Change", kind:"mixed", mult:1.15, durMin:[4,6], note:"Deposits earn slightly more, loans slightly more too." }
     ];
 
-    const CASES = [
-        { id: 1, name: "Бомж Кейс", price: 100, img: "https://cdn-icons-png.flaticon.com/512/9329/9329199.png", pool: [9, 9, 8, 9, 8] },
-        { id: 2, name: "Тайное", price: 5000, img: "https://cdn-icons-png.flaticon.com/512/3062/3062634.png", pool: [7, 5, 2, 7, 6] },
-        { id: 3, name: "Мажор", price: 15000, img: "https://cdn-icons-png.flaticon.com/512/644/644667.png", pool: [4, 2, 1, 3] },
-        { id: 4, name: "Ножи", price: 50000, img: "https://cdn-icons-png.flaticon.com/512/9626/9626643.png", pool: [3, 4, 1] }
+    function maybeStartEvent() {
+      const t = nowMs();
+      const ev = S.events.active;
+      if (ev && t <= ev.endsAt) return;
+
+      // Clear expired
+      if (ev && t > ev.endsAt) {
+        S.events.active = null;
+        toast("Event ended.", "neutral");
+      }
+
+      // Start chance roughly every 4-7 minutes (checked periodically)
+      const since = (t - S.events.lastEventAt) / 1000;
+      const minGap = 220; // sec
+      if (since < minGap) return;
+
+      // Probability increases with time since last event
+      const p = clamp((since - minGap) / 260, 0, 0.35);
+      if (randUnit() > p) return;
+
+      const pick = EVENT_POOL[Math.floor(randUnit() * EVENT_POOL.length)];
+      const durMin = pick.durMin[0] + Math.floor(randUnit() * (pick.durMin[1] - pick.durMin[0] + 1));
+      const startedAt = t;
+      const endsAt = t + durMin * 60_000;
+
+      // Apply event-specific tweaks
+      let evObj = { ...pick, startedAt, endsAt };
+
+      if (pick.id === "crash") {
+        // Temporarily increase mean reversion to create pullbacks
+        for (const a of Object.values(S.market.assets)) a.meanRevert = clamp(a.meanRevert * 1.35, 0.008, 0.08);
+      }
+      if (pick.id === "policy") {
+        // Adjust bank rates lightly during event
+        // (We'll reflect by using the mult in getDepositDailyBps/getLoanDailyBps via currentEvent*? We'll just show note)
+      }
+
+      S.events.active = evObj;
+      S.events.lastEventAt = t;
+      toast(`${pick.name}: ${pick.note}`, pick.id === "audit" ? "warn" : "good", 3600);
+    }
+
+    function eventBadgeHtml() {
+      const ev = S.events.active;
+      const t = nowMs();
+      if (!ev || t > ev.endsAt) return "—";
+      const leftSec = Math.max(0, Math.floor((ev.endsAt - t) / 1000));
+      const mm = Math.floor(leftSec / 60);
+      const ss = leftSec % 60;
+      const cls = ev.kind === "income" ? "good" : (ev.id === "crash" || ev.id === "audit" ? "warn" : "neutral");
+      return `<span class="badge ${cls}"><span class="b"></span>${escapeHtml(ev.name)} <span class="mono">(${mm}:${String(ss).padStart(2,"0")})</span></span>`;
+    }
+
+    // =========================================================
+    // Business risk events (maintenance + occasional mishaps)
+    // =========================================================
+    let businessTimer = 0;
+    function businessMaintenanceTick(dtSec) {
+      businessTimer += dtSec;
+      if (businessTimer < 60) return; // check once per minute
+      businessTimer = 0;
+
+      const rr = budgetingRiskReduction();
+      let ownedCount  = 0;
+      let totalUpkeep = 0;
+
+      for (const def of businessDefs()) {
+        const owned = S.businesses[def.id].owned || 0;
+        if (owned <= 0) continue;
+        ownedCount += owned;
+
+        // Monthly-ish taxes approximated as periodic "maintenance charge"
+        // Charge = upkeepPerMin * 30 minutes every minute tick -> keeps tension but not too punishing
+        totalUpkeep += Math.floor(def.upkeepPerMinCents * owned * 30 * rr);
+
+        // Risk: per hour in bps -> per minute probability
+        const riskPerMin = (def.riskBpsPerHour / 10_000) / 60;
+        for (let i = 0; i < owned; i++) {
+          if (randUnit() < riskPerMin * rr) {
+            // Mishap: pay a small repair cost, or lose a bit of income as a "downtime"
+            const repair = clamp(Math.floor(def.costCents * (0.02 + randUnit() * 0.03)), 10, 800_00);
+            const ok = transact(-repair, { type:"repair", note:def.id, allowNegative:false });
+            if (ok.ok) {
+              toast(`${def.name}: unexpected repair (${formatCents(repair)})`, "warn", 3200);
+            } else {
+              // If can't pay, force sell 1 unit of that business (harsh but prevents softlocks)
+              if (S.businesses[def.id].owned > 0) {
+                S.businesses[def.id].owned -= 1;
+                const salvage = Math.floor(def.costCents * 0.35);
+                transact(salvage, { type:"forced_sale", note:def.id });
+                toast(`${def.name}: couldn't cover repairs. Sold 1 unit (salvaged ${formatCents(salvage)}).`, "bad", 4200);
+              }
+            }
+          }
+        }
+      }
+
+      if (ownedCount > 0 && totalUpkeep > 0) {
+        // Maintenance charge (acts like periodic tax). Keep it moderate.
+        const ok = transact(-totalUpkeep, { type:"maintenance", note:"businesses", allowNegative:false });
+        if (ok.ok) {
+          toast(`Maintenance paid: ${formatCents(totalUpkeep)}`, "neutral", 2200);
+        } else {
+          toast("Maintenance due but insufficient cash. Consider withdrawing deposit or selling assets.", "warn", 3600);
+        }
+      }
+    }
+
+    // =========================================================
+    // Bank interest & loans
+    // =========================================================
+    function applyBankInterest(dtSec, offlineDiminish = 1) {
+      const days = dtSec / 86400;
+
+      // Deposit interest
+      const depRateBps = getDepositDailyBps();
+      let dep = S.bank.depositCents;
+      if (dep > 0) {
+        // interest = dep * rate * days
+        const interest = Math.floor(dep * (depRateBps / 10_000) * days * offlineDiminish);
+        if (interest > 0) {
+          // deposit increases itself, capped by limit
+          const limit = getDepositLimitCents();
+          S.bank.depositCents = clamp(dep + interest, 0, limit);
+        }
+      }
+
+      // Loan interest
+      const loanRateBps = getLoanDailyBps();
+      let lp = S.bank.loanPrincipalCents;
+      if (lp > 0) {
+        const interest = Math.max(1, Math.floor(lp * (loanRateBps / 10_000) * days * offlineDiminish));
+        S.bank.loanPrincipalCents = clamp(lp + interest, 0, 999_999_999_00);
+
+        // Due check: every 2 days payment is expected
+        if (!S.bank.loanDueAt) S.bank.loanDueAt = nowMs() + 48 * 60 * 60 * 1000;
+      }
+    }
+
+    function loanIsLate() {
+      return S.bank.loanPrincipalCents > 0 && S.bank.loanDueAt > 0 && nowMs() > S.bank.loanDueAt;
+    }
+
+    function handleLateLoan(dtSec) {
+      if (S.bank.loanPrincipalCents <= 0) return;
+      if (!loanIsLate()) return;
+
+      // Track late days
+      if (!S._lateFrac) S._lateFrac = 0;
+      S._lateFrac += dtSec / 86400;
+      const wholeDays = Math.floor(S._lateFrac);
+      if (wholeDays <= 0) return;
+      S._lateFrac -= wholeDays;
+      S.bank.lateDays = clamp(S.bank.lateDays + wholeDays, 0, 60);
+
+      // Penalties: small fee + reputation hit
+      const fee = clamp(Math.floor(S.bank.loanPrincipalCents * 0.006), 25, 1_500_00) * wholeDays;
+      const repLoss = 1 * wholeDays;
+      S.reputation = Math.max(0, S.reputation - repLoss);
+
+      // Attempt to auto-collect from cash (never allow negative collection)
+      const ok = transact(-fee, { type:"late_fee", note:"loan", allowNegative:false });
+      if (ok.ok) {
+        toast(`Loan late fee charged: ${formatCents(fee)} (rep -${repLoss})`, "bad", 3800);
+      } else {
+        toast("Loan is late and fees are due. Pay ASAP to stop penalties.", "bad", 4200);
+      }
+
+      // Push due date forward by 1 day to avoid spamming
+      S.bank.loanDueAt = nowMs() + 24 * 60 * 60 * 1000;
+    }
+
+    // =========================================================
+    // Offline earnings & anti-cheat
+    // =========================================================
+    function applyOfflineProgress() {
+      const t = nowMs();
+      const last = safeInt(S.lastSeen, t);
+      const rawSec = Math.max(0, Math.floor((t - last) / 1000));
+      const cappedSec = Math.min(rawSec, OFFLINE_CAP_SEC);
+
+      // Diminish (prevents unlimited offline income). If cappedSec = 0, no-op.
+      const diminish = cappedSec <= 0 ? 0 : Math.pow(cappedSec / OFFLINE_CAP_SEC, OFFLINE_DIMINISH_POW);
+      const effectiveSec = Math.floor(cappedSec * diminish);
+
+      // Passive income during offline
+      const perMin = passivePerMinCents();
+      const passive = Math.floor(perMin * (effectiveSec / 60));
+
+      // Apply bank interest with same diminish factor (scaled)
+      const bankD = cappedSec <= 0 ? 0 : (effectiveSec / cappedSec);
+      if (bankD > 0) applyBankInterest(cappedSec, bankD);
+
+      // Apply passive as one transaction (ledger)
+      let awarded = 0;
+      if (passive > 0) {
+        const ok = transact(passive, { type:"offline_passive", note:"offline", allowNegative:true });
+        if (ok.ok) awarded += passive;
+      }
+
+      S.stats.lastOfflineAwardCents = awarded;
+      S.stats.lastOfflineSec = rawSec;
+
+      // Prevent "time travel": if rawSec is absurd (e.g., > 7 days), mark suspicious.
+      if (rawSec > 7 * 86400) {
+        S.suspicious = true;
+        toast("Unusual offline duration detected. Save marked suspicious.", "warn", 4200);
+      }
+
+      if (awarded > 0) {
+        toast(`Offline earnings: ${formatCents(awarded)} (effective ${Math.floor(effectiveSec/60)} min)`, "good", 4200);
+      }
+      // Update lastSeen
+      S.lastSeen = t;
+    }
+
+    // =========================================================
+    // Achievements & Reputation
+    // =========================================================
+    const ACH_DEFS = [
+      { id:"firstDollar", name:"First Dollar", desc:"Reach $1.00 cash.", rep:1, check:() => S.moneyCents >= 100 },
+      { id:"firstBiz", name:"Entrepreneur", desc:"Buy your first business.", rep:2, check:() => S.stats.totalBusinessesBought >= 1 },
+      { id:"trader", name:"First Trade", desc:"Complete a market trade.", rep:1, check:() => S.stats.totalTrades >= 1 },
+      { id:"saver", name:"Saver", desc:"Deposit $100+ in the bank.", rep:2, check:() => S.bank.depositCents >= 100_00 },
+      { id:"level5", name:"Getting Serious", desc:"Reach Level 5.", rep:2, check:() => S.level >= 5 },
+      { id:"netWorth10k", name:"Five Digits", desc:"Reach $10,000 net worth.", rep:3, check:() => netWorthCents() >= 10_000_00 },
+      { id:"netWorth100k", name:"Six Digits", desc:"Reach $100,000 net worth.", rep:5, check:() => netWorthCents() >= 100_000_00 }
     ];
 
-    let balance = 2000.00;
-    let inventory = [];
-    let currentWin = null;
+    function checkAchievements() {
+      let gained = 0;
+      for (const a of ACH_DEFS) {
+        if (S.achievements[a.id]) continue;
+        if (a.check()) {
+          S.achievements[a.id] = true;
+          S.reputation = clamp(S.reputation + a.rep, 0, 50);
+          gained += 1;
+          toast(`Achievement: ${a.name} (+${a.rep} rep)`, "good", 3600);
+        }
+      }
+      return gained;
+    }
 
-    // --- INIT ---
+    // =========================================================
+    // Actions
+    // =========================================================
+    function doOddJob() {
+      withLock("oddjob", 280, () => {
+        const cost = oddJobEnergyCost();
+        if (S.energy < cost) {
+          toast("Not enough energy. Wait for regen or buy Coffee.", "warn");
+          return;
+        }
+        S.energy -= cost;
+
+        const payout = oddJobPayoutCents();
+        const ok = transact(payout, { type:"odd_job", note:"tap", allowNegative:true });
+        if (!ok.ok) {
+          // refund energy on failure
+          S.energy = clamp(S.energy + cost, 0, S.energyMax);
+          toast(ok.err || "Transaction failed.", "bad");
+          return;
+        }
+        S.xp = safeInt(S.xp + oddJobXPGain(), S.xp);
+        S.stats.oddJobsDone = safeInt(S.stats.oddJobsDone + 1, S.stats.oddJobsDone);
+        maybeLevelUp();
+        checkAchievements();
+        render();
+      });
+    }
+
+    function maybeLevelUp() {
+      const nw = netWorthCents();
+      const newLevel = levelFromProgress(nw, S.xp);
+      if (newLevel > S.level) {
+        S.level = newLevel;
+        // Increase energy max a bit each level
+        const addMax = (newLevel <= 10) ? 2 : 1;
+        S.energyMax = clamp(S.energyMax + addMax, 30, 120);
+        S.energy = clamp(S.energy + addMax, 0, S.energyMax);
+        unlockBusinessesByLevel();
+        toast(`Level up! You are now Level ${newLevel}.`, "good", 3200);
+      }
+    }
+
+    function buyUpgrade(upId) {
+      withLock("buyup_" + upId, 500, () => {
+        const defs = upgradeDefs();
+        const def = defs.find(x => x.id === upId);
+        if (!def) return;
+        const owned = S.upgrades[upId] || 0;
+        if (owned >= def.max) { toast("Upgrade maxed.", "neutral"); return; }
+        if (!def.canBuy()) { toast("Locked. Level up to unlock.", "warn"); return; }
+        const cost = upgradeCostCents(def);
+        const ok = transact(-cost, { type:"upgrade_buy", note:upId, allowNegative:false });
+        if (!ok.ok) { toast(ok.err || "Not enough money.", "warn"); return; }
+        S.upgrades[upId] = owned + 1;
+        def.onBuy();
+        toast(`Upgraded: ${def.name}`, "good");
+        maybeLevelUp();
+        checkAchievements();
+        render();
+      });
+    }
+
+    function buyBusiness(bizId) {
+      withLock("buybiz_" + bizId, 650, () => {
+        const def = businessDefs().find(x => x.id === bizId);
+        if (!def) return;
+        const st = S.businesses[bizId];
+        if (!st.unlocked) { toast("Locked. Level up to unlock.", "warn"); return; }
+        // Soft cap to reduce runaway
+        const cap = 25;
+        if (st.owned >= cap) { toast("You hit the ownership cap for this business.", "neutral"); return; }
+
+        // Cost grows slightly with ownership
+        const scale = 1 + Math.pow(st.owned, 1.08) * 0.05;
+        const cost = Math.floor(def.costCents * scale);
+
+        const ok = transact(-cost, { type:"business_buy", note:bizId, allowNegative:false });
+        if (!ok.ok) { toast(ok.err || "Not enough money.", "warn"); return; }
+        st.owned += 1;
+        S.stats.totalBusinessesBought = safeInt(S.stats.totalBusinessesBought + 1, S.stats.totalBusinessesBought);
+        S.xp = safeInt(S.xp + 15, S.xp);
+        maybeLevelUp();
+        checkAchievements();
+        toast(`Bought: ${def.name}`, "good");
+        render();
+      });
+    }
+
+    function sellBusiness(bizId) {
+      withLock("sellbiz_" + bizId, 650, () => {
+        const def = businessDefs().find(x => x.id === bizId);
+        if (!def) return;
+        const st = S.businesses[bizId];
+        if (st.owned <= 0) { toast("You don't own any.", "neutral"); return; }
+        // Resale value decreases slightly with many owned
+        const scale = 0.55 - Math.min(0.12, st.owned * 0.004);
+        const value = Math.floor(def.costCents * scale);
+        st.owned -= 1;
+        transact(value, { type:"business_sell", note:bizId, allowNegative:true });
+        toast(`Sold: ${def.name} (+${formatCents(value)})`, "neutral");
+        render();
+      });
+    }
+
+    function depositMoney() {
+      withLock("deposit", 700, () => {
+        const amt = parseMoneyToCents($("depAmt").value);
+        if (amt === null || amt <= 0) { toast("Enter a valid deposit amount.", "warn"); return; }
+        const limit = getDepositLimitCents();
+        if (S.bank.depositCents + amt > limit) { toast("Deposit would exceed your limit.", "warn"); return; }
+
+        const ok = transact(-amt, { type:"deposit", note:"bank", allowNegative:false });
+        if (!ok.ok) { toast(ok.err || "Not enough money.", "warn"); return; }
+        S.bank.depositCents += amt;
+        $("depAmt").value = "";
+        checkAchievements();
+        toast(`Deposited ${formatCents(amt)}.`, "good");
+        render();
+      });
+    }
+
+    function withdrawMoney() {
+      withLock("withdraw", 700, () => {
+        const amt = parseMoneyToCents($("wdAmt").value);
+        if (amt === null || amt <= 0) { toast("Enter a valid withdrawal amount.", "warn"); return; }
+        if (amt > S.bank.depositCents) { toast("Not enough in deposit.", "warn"); return; }
+        S.bank.depositCents -= amt;
+        const ok = transact(amt, { type:"withdraw", note:"bank", allowNegative:true });
+        if (!ok.ok) {
+          // revert
+          S.bank.depositCents += amt;
+          toast(ok.err || "Withdraw failed.", "bad");
+          return;
+        }
+        $("wdAmt").value = "";
+        toast(`Withdrew ${formatCents(amt)}.`, "neutral");
+        render();
+      });
+    }
+
+    function takeLoan() {
+      withLock("loan", 900, () => {
+        if (S.bank.loanPrincipalCents > 0) { toast("You already have an active loan.", "warn"); return; }
+        const amt = parseMoneyToCents($("loanAmt").value);
+        if (amt === null || amt <= 0) { toast("Enter a valid loan amount.", "warn"); return; }
+        const limit = getLoanLimitCents();
+        if (amt > limit) { toast("That exceeds your current credit limit.", "warn"); return; }
+
+        // Loan origination fee (reduced by budgeting)
+        const feeBps = Math.floor(80 * budgetingRiskReduction()); // ~0.80% base
+        const fee = Math.max(25, Math.floor(amt * feeBps / 10_000));
+
+        // Disburse loan - fee
+        S.bank.loanPrincipalCents = amt;
+        S.bank.loanDailyBps = getLoanDailyBps();
+        S.bank.loanDueAt = nowMs() + 48 * 60 * 60 * 1000; // due in 2 days
+        S.bank.lateDays = 0;
+
+        const ok = transact(amt - fee, { type:"loan_disburse", note:"bank", allowNegative:true });
+        if (!ok.ok) {
+          // rollback
+          S.bank.loanPrincipalCents = 0;
+          S.bank.loanDueAt = 0;
+          toast(ok.err || "Loan failed.", "bad");
+          return;
+        }
+        $("loanAmt").value = "";
+        toast(`Loan taken: ${formatCents(amt)} (fee ${formatCents(fee)})`, "warn", 3800);
+        render();
+      });
+    }
+
+    function payLoan() {
+      withLock("payloan", 700, () => {
+        if (S.bank.loanPrincipalCents <= 0) { toast("No active loan.", "neutral"); return; }
+        const amt = parseMoneyToCents($("payAmt").value);
+        if (amt === null || amt <= 0) { toast("Enter a valid payment amount.", "warn"); return; }
+
+        const pay = Math.min(amt, S.bank.loanPrincipalCents);
+
+        const ok = transact(-pay, { type:"loan_pay", note:"bank", allowNegative:false });
+        if (!ok.ok) { toast(ok.err || "Not enough money.", "warn"); return; }
+
+        S.bank.loanPrincipalCents -= pay;
+        if (S.bank.loanPrincipalCents <= 0) {
+          S.bank.loanPrincipalCents = 0;
+          S.bank.loanDueAt = 0;
+          // reward: small reputation restore
+          S.reputation = clamp(S.reputation + 1, 0, 50);
+          toast(`Loan fully paid. (+1 rep)`, "good", 3200);
+        } else {
+          // extend due date slightly to avoid punishment if paying
+          S.bank.loanDueAt = nowMs() + 48 * 60 * 60 * 1000;
+          toast(`Paid ${formatCents(pay)} toward loan.`, "good");
+        }
+        $("payAmt").value = "";
+        render();
+      });
+    }
+
+    function selectAsset(sym) {
+      if (!S.market.assets[sym]) return;
+      S.market.selected = sym;
+      renderMarketTradePanel();
+      toast(`Selected ${S.market.assets[sym].name}.`, "neutral", 1400);
+    }
+
+    function parseQtyToMilli(str) {
+      if (typeof str !== "string") return null;
+      const s = str.trim().replace(/,/g,"");
+      if (!s) return null;
+      if (!/^\d+(\.\d{0,3})?$/.test(s)) return null;
+      const parts = s.split(".");
+      const whole = parseInt(parts[0] || "0", 10);
+      const frac = parseInt((parts[1] || "0").padEnd(3, "0").slice(0,3), 10);
+      if (!Number.isFinite(whole) || !Number.isFinite(frac)) return null;
+      const milli = whole * UNIT_SCALE + frac;
+      if (!Number.isSafeInteger(milli) || milli < 0) return null;
+      return milli;
+    }
+
+    function formatQtyMilli(m) {
+      const sign = m < 0 ? "-" : "";
+      const v = Math.abs(m);
+      const whole = Math.floor(v / UNIT_SCALE);
+      const frac = v % UNIT_SCALE;
+      // Trim trailing zeros
+      let fracStr = String(frac).padStart(3, "0");
+      fracStr = fracStr.replace(/0+$/,"");
+      return sign + whole.toLocaleString(undefined) + (fracStr ? "." + fracStr : "");
+    }
+
+    function buySelected() {
+      withLock("trade_buy", TRADE_COOLDOWN_MS, () => {
+        const sym = S.market.selected;
+        const a = S.market.assets[sym];
+        if (!a) return;
+
+        const qtyMilli = parseQtyToMilli($("tradeQty").value);
+        if (qtyMilli === null || qtyMilli <= 0) { toast("Enter a valid quantity.", "warn"); return; }
+
+        const { ask } = bidAskFor(sym);
+        const notional = Math.floor(qtyMilli * ask / UNIT_SCALE);
+        if (notional <= 0) { toast("Trade too small.", "warn"); return; }
+
+        // Slippage
+        const slipBps = slippageBpsForNotional(notional);
+        const px = applySlippage(ask, slipBps, "buy");
+        const notional2 = Math.floor(qtyMilli * px / UNIT_SCALE);
+
+        const fee = tradeFeeCents(notional2);
+        const total = notional2 + fee;
+
+        const ok = transact(-total, { type:"trade_buy", note:sym, allowNegative:false });
+        if (!ok.ok) { toast(ok.err || "Not enough money for this buy.", "warn"); return; }
+
+        S.market.holdings[sym] = safeInt(S.market.holdings[sym] + qtyMilli, S.market.holdings[sym]);
+        S.stats.totalTrades = safeInt(S.stats.totalTrades + 1, S.stats.totalTrades);
+        S.xp = safeInt(S.xp + 6, S.xp);
+        maybeLevelUp();
+        checkAchievements();
+
+        $("tradeQty").value = "";
+        toast(`Bought ${formatQtyMilli(qtyMilli)} ${a.name} (fee ${formatCents(fee)})`, "good", 3200);
+        render();
+      });
+    }
+
+    function sellSelected() {
+      withLock("trade_sell", TRADE_COOLDOWN_MS, () => {
+        const sym = S.market.selected;
+        const a = S.market.assets[sym];
+        if (!a) return;
+
+        const qtyMilli = parseQtyToMilli($("tradeQty").value);
+        if (qtyMilli === null || qtyMilli <= 0) { toast("Enter a valid quantity.", "warn"); return; }
+
+        const held = S.market.holdings[sym] || 0;
+        if (qtyMilli > held) { toast("You don't have that much to sell.", "warn"); return; }
+
+        const { bid } = bidAskFor(sym);
+        const notional = Math.floor(qtyMilli * bid / UNIT_SCALE);
+
+        // Slippage
+        const slipBps = slippageBpsForNotional(notional);
+        const px = applySlippage(bid, slipBps, "sell");
+        const notional2 = Math.floor(qtyMilli * px / UNIT_SCALE);
+
+        const fee = tradeFeeCents(notional2);
+        const proceeds = Math.max(0, notional2 - fee);
+
+        // Apply holdings first to prevent reentrancy/exploit patterns
+        S.market.holdings[sym] = held - qtyMilli;
+
+        const ok = transact(proceeds, { type:"trade_sell", note:sym, allowNegative:true });
+        if (!ok.ok) {
+          // revert holdings
+          S.market.holdings[sym] = held;
+          toast(ok.err || "Sell failed.", "bad");
+          return;
+        }
+
+        S.stats.totalTrades = safeInt(S.stats.totalTrades + 1, S.stats.totalTrades);
+        S.xp = safeInt(S.xp + 4, S.xp);
+        maybeLevelUp();
+        checkAchievements();
+
+        $("tradeQty").value = "";
+        toast(`Sold ${formatQtyMilli(qtyMilli)} ${a.name} (fee ${formatCents(fee)})`, "neutral", 2800);
+        render();
+      });
+    }
+
+    // =========================================================
+    // Rendering
+    // =========================================================
+    function setTab(tab) {
+      uiTab = tab;
+      for (const t of ["home","business","bank","market"]) {
+        const sec = $("tab-" + t);
+        if (sec) sec.style.display = (t === tab) ? "" : "none";
+      }
+      document.querySelectorAll(".tab").forEach(el => {
+        el.classList.toggle("active", el.dataset.tab === tab);
+      });
+      render(); // refresh tab-specific panels
+    }
+
+    function renderTop() {
+      $("money").textContent = formatCents(S.moneyCents);
+      $("energy").textContent = `${S.energy}/${S.energyMax} `;
+      $("energySub").textContent = `(+${S.energyRegenPerMin}/min)`;
+      $("level").textContent = String(S.level);
+      $("lastSeen").textContent = isoTime(S.lastSeen);
+      $("eventBadge").innerHTML = eventBadgeHtml();
+      updateSaveStatus(false, S.suspicious);
+    }
+
+    function renderHome() {
+      $("oddJobPayout").textContent = formatCents(oddJobPayoutCents());
+      $("oddJobCost").textContent = String(oddJobEnergyCost());
+      $("oddJobXP").textContent = String(oddJobXPGain());
+
+      const hint = (() => {
+        const perMin = passivePerMinCents();
+        const ev = S.events.active;
+        if (ev && nowMs() <= ev.endsAt) {
+          return `Active event: ${ev.name}. ${ev.note}`;
+        }
+        if (perMin <= 0) return "Start with odd jobs, then buy a Lemonade Stand for passive income.";
+        if (S.bank.loanPrincipalCents > 0) return "You have a loan — keep an eye on the due date to avoid fees.";
+        return "Consider balancing: some deposit for safety + some business for growth + some trading for risk/reward.";
+      })();
+      $("homeHint").textContent = hint;
+
+      $("netWorth").textContent = formatCents(netWorthCents());
+      $("passiveRate").textContent = `${formatCents(passivePerMinCents())} / min`;
+
+      const risk = upkeepRiskLabel();
+      $("riskTag").innerHTML = `<span class="tag ${risk.cls}">${escapeHtml(risk.text)}</span>`;
+
+      // Odd job button disable
+      $("oddJobBtn").disabled = S.energy < oddJobEnergyCost();
+
+      // Upgrades list
+      const ul = $("upgradeList");
+      ul.innerHTML = "";
+      for (const def of upgradeDefs()) {
+        const owned = S.upgrades[def.id] || 0;
+        const cost = upgradeCostCents(def);
+        const locked = !def.canBuy();
+        const maxed = owned >= def.max;
+        const btnText = maxed ? "Maxed" : (locked ? "Locked" : `Buy (${formatCents(cost)})`);
+        const btnCls = maxed ? "btn" : "btn primary";
+        const row = document.createElement("div");
+        row.className = "item";
+        row.innerHTML = `
+          <div>
+            <div class="t">${escapeHtml(def.name)} <span class="tag">${owned}/${def.max}</span></div>
+            <div class="d">${escapeHtml(def.desc)} ${locked ? " (Requires level)" : ""}</div>
+          </div>
+          <div class="right">
+            <div class="mono small">${maxed ? "" : "Cost: " + formatCents(cost)}</div>
+            <button class="${btnCls}" ${locked || maxed ? "disabled": ""} data-up="${def.id}">${escapeHtml(btnText)}</button>
+          </div>
+        `;
+        ul.appendChild(row);
+      }
+      ul.querySelectorAll("button[data-up]").forEach(b => {
+        b.addEventListener("click", () => buyUpgrade(b.dataset.up), { passive:true });
+      });
+
+      // Achievements
+      const al = $("achList");
+      al.innerHTML = "";
+      for (const a of ACH_DEFS) {
+        const done = !!S.achievements[a.id];
+        const row = document.createElement("div");
+        row.className = "item";
+        row.innerHTML = `
+          <div>
+            <div class="t">${escapeHtml(a.name)} ${done ? `<span class="tag good">Done</span>` : `<span class="tag">Pending</span>`}</div>
+            <div class="d">${escapeHtml(a.desc)} <span class="muted">(+${a.rep} rep)</span></div>
+          </div>
+          <div class="right">
+            ${done ? `<span class="badge good"><span class="b"></span> +${a.rep}</span>` : `<span class="badge neutral"><span class="b"></span> —</span>`}
+          </div>
+        `;
+        al.appendChild(row);
+      }
+    }
+
+    function renderBusiness() {
+      const bl = $("bizList");
+      bl.innerHTML = "";
+
+      for (const def of businessDefs()) {
+        const st = S.businesses[def.id];
+        const owned = st.owned || 0;
+        const unlocked = !!st.unlocked;
+        const baseCost = def.costCents;
+        const scale = 1 + Math.pow(owned, 1.08) * 0.05;
+        const nextCost = Math.floor(baseCost * scale);
+
+        const rr = budgetingRiskReduction();
+        const gross = Math.floor(def.incomePerMinCents * currentEventIncomeMult());
+        const upkeep = Math.floor(def.upkeepPerMinCents * rr);
+        const net = Math.max(0, gross - upkeep);
+
+        const riskPerHour = Math.floor(def.riskBpsPerHour * rr);
+        const riskLabel = riskPerHour <= 50 ? "Low" : (riskPerHour <= 80 ? "Med" : "High");
+        const riskCls = riskLabel === "Low" ? "good" : (riskLabel === "Med" ? "warn" : "bad");
+
+        const row = document.createElement("div");
+        row.className = "item";
+        row.innerHTML = `
+          <div>
+            <div class="t">${escapeHtml(def.name)} ${unlocked ? "" : `<span class="tag warn">Locked (Lvl ${def.unlockLevel})</span>`} <span class="tag">Owned: ${owned}</span></div>
+            <div class="d">
+              Net: <span class="mono">${formatCents(net)}</span>/min
+              <span class="muted">(gross ${formatCents(gross)}/min, upkeep ${formatCents(upkeep)}/min)</span>
+              · Risk: <span class="tag ${riskCls}">${riskLabel}</span>
+            </div>
+          </div>
+          <div class="right">
+            <div class="mono small">Next: ${formatCents(nextCost)}</div>
+            <div class="actions" style="justify-content:flex-end;">
+              <button class="btn primary" ${!unlocked ? "disabled": ""} data-bb="${def.id}">Buy</button>
+              <button class="btn" ${owned<=0 ? "disabled": ""} data-bs="${def.id}">Sell</button>
+            </div>
+          </div>
+        `;
+        bl.appendChild(row);
+      }
+
+      bl.querySelectorAll("button[data-bb]").forEach(b => {
+        b.addEventListener("click", () => buyBusiness(b.dataset.bb), { passive:true });
+      });
+      bl.querySelectorAll("button[data-bs]").forEach(b => {
+        b.addEventListener("click", () => sellBusiness(b.dataset.bs), { passive:true });
+      });
+    }
+
+    function renderBank() {
+      const depRate = getDepositDailyBps();
+      const loanRate = getLoanDailyBps();
+      $("depBal").textContent = formatCents(S.bank.depositCents);
+      $("depAPR").textContent = formatPct(depRate);
+      $("depLimit").textContent = formatCents(getDepositLimitCents());
+
+      $("loanPrin").textContent = formatCents(S.bank.loanPrincipalCents);
+      $("loanAPR").textContent = formatPct(loanRate);
+
+      if (S.bank.loanPrincipalCents > 0) {
+        const due = S.bank.loanDueAt ? isoTime(S.bank.loanDueAt) : "—";
+        const late = loanIsLate() ? ` <span class="tag bad">LATE</span>` : "";
+        $("loanDue").innerHTML = `${escapeHtml(due)}${late}`;
+      } else {
+        $("loanDue").textContent = "—";
+      }
+      $("loanLimit").textContent = formatCents(getLoanLimitCents());
+
+      // Disable loan button if active loan
+      $("loanBtn").disabled = S.bank.loanPrincipalCents > 0;
+    }
+
+    function renderMarket() {
+      // Header chips
+      const hdr = $("marketHeader");
+      const nw = netWorthCents();
+      const cash = S.moneyCents;
+      const dep = S.bank.depositCents;
+      const loan = S.bank.loanPrincipalCents;
+      hdr.innerHTML = `
+        <span class="chip">Net worth <span class="mono">${formatCents(nw)}</span></span>
+        <span class="chip">Cash <span class="mono">${formatCents(cash)}</span></span>
+        <span class="chip">Deposit <span class="mono">${formatCents(dep)}</span></span>
+        <span class="chip ${loan>0 ? "down":"up"}">${loan>0 ? "Loan":"Loan"} <span class="mono">${formatCents(loan)}</span></span>
+        <span class="chip">Fee <span class="mono">${formatPct(TRADE_FEE_BPS)}</span></span>
+        <span class="chip">Spread <span class="mono">${formatPct(SPREAD_BPS)}</span></span>
+      `;
+
+      // Rows
+      const tb = $("marketRows");
+      tb.innerHTML = "";
+      for (const sym of Object.keys(S.market.assets)) {
+        const a = S.market.assets[sym];
+        const { bid, ask } = bidAskFor(sym);
+        const deltaBps = a.oneMinDeltaBps || 0;
+        const cls = deltaBps >= 0 ? "up" : "down";
+        const deltaPct = (deltaBps / 100).toFixed(2) + "%";
+        const held = S.market.holdings[sym] || 0;
+        const value = Math.floor(held * a.priceCents / UNIT_SCALE);
+        const tr = document.createElement("tr");
+        tr.style.cursor = "pointer";
+        tr.addEventListener("click", () => selectAsset(sym), { passive:true });
+        tr.innerHTML = `
+          <td><strong>${escapeHtml(a.name)}</strong> <span class="muted mono">(${sym})</span></td>
+          <td class="mono">${formatCents(a.priceCents)}</td>
+          <td><span class="chip ${cls}">${deltaPct}</span></td>
+          <td class="mono">${a.trend >= 0 ? "↑" : "↓"} ${Math.abs(a.trend).toFixed(2)}</td>
+          <td class="mono">${formatQtyMilli(held)}</td>
+          <td class="mono">${formatCents(value)}</td>
+        `;
+        tb.appendChild(tr);
+      }
+
+      renderMarketTradePanel();
+    }
+
+    function renderMarketTradePanel() {
+      const sym = S.market.selected;
+      const a = S.market.assets[sym];
+      if (!a) {
+        $("selAsset").textContent = "—";
+        $("bidAsk").textContent = "—";
+        $("feeLine").textContent = "—";
+        $("tradeHint").textContent = "Select an asset from the table.";
+        return;
+      }
+      const { bid, ask } = bidAskFor(sym);
+      $("selAsset").textContent = `${a.name} (${sym})`;
+      $("bidAsk").textContent = `${formatCents(bid)} / ${formatCents(ask)}`;
+      $("feeLine").textContent = `${formatPct(TRADE_FEE_BPS)} fee + ${formatPct(SPREAD_BPS)} spread (+ slippage on large trades)`;
+
+      const held = S.market.holdings[sym] || 0;
+      const val = Math.floor(held * a.priceCents / UNIT_SCALE);
+      $("tradeHint").textContent =
+        `You hold ${formatQtyMilli(held)} (${formatCents(val)}). Tip: avoid all-in bets — markets can reverse fast.`;
+    }
+
+    function render() {
+      renderTop();
+      if (uiTab === "home") renderHome();
+      else if (uiTab === "business") renderBusiness();
+      else if (uiTab === "bank") renderBank();
+      else if (uiTab === "market") renderMarket();
+    }
+
+    // =========================================================
+    // Game loop
+    // =========================================================
+    let lastTickAt = nowMs();
+    let accumPassive = 0;
+    let accumMarket = 0;
+    let accumEvent = 0;
+
+    function loop() {
+      const t = nowMs();
+      let dtSec = (t - lastTickAt) / 1000;
+      if (!Number.isFinite(dtSec) || dtSec < 0) dtSec = 0;
+      dtSec = clamp(dtSec, 0, 2.5); // cap per tick to avoid huge spikes
+      lastTickAt = t;
+
+      // Energy regen
+      energyTick(dtSec);
+
+      // Passive income
+      accumPassive += dtSec;
+      if (accumPassive >= PASSIVE_GRANULARITY_SEC) {
+        const steps = Math.floor(accumPassive / PASSIVE_GRANULARITY_SEC);
+        accumPassive -= steps * PASSIVE_GRANULARITY_SEC;
+
+        const perMin = passivePerMinCents();
+        const add = Math.floor(perMin * ((steps * PASSIVE_GRANULARITY_SEC) / 60));
+        if (add > 0) {
+          transact(add, { type:"passive", note:"businesses", allowNegative:true });
+        }
+
+        // Bank interest (online)
+        applyBankInterest(steps * PASSIVE_GRANULARITY_SEC, 1);
+
+        // Late loan handling
+        handleLateLoan(steps * PASSIVE_GRANULARITY_SEC);
+
+        // Business maintenance & risk (per minute check)
+        businessMaintenanceTick(steps * PASSIVE_GRANULARITY_SEC);
+
+        // Level update from passive changes
+        maybeLevelUp();
+        checkAchievements();
+      }
+
+      // Market
+      accumMarket += dtSec;
+      if (accumMarket >= MARKET_STEP_SEC) {
+        const steps = Math.floor(accumMarket / MARKET_STEP_SEC);
+        accumMarket -= steps * MARKET_STEP_SEC;
+        for (let i=0;i<steps;i++) marketStep();
+      }
+
+      // Events
+      accumEvent += dtSec;
+      if (accumEvent >= EVENT_CHECK_SEC) {
+        accumEvent = 0;
+        maybeStartEvent();
+      }
+
+      // Update lastSeen for anti-cheat (regularly)
+      S.lastSeen = t;
+
+      // Autosave occasionally
+      if (!S._autosaveAt) S._autosaveAt = t;
+      if (t - S._autosaveAt > 12_000) {
+        S._autosaveAt = t;
+        saveLocal();
+        updateSaveStatus(true, S.suspicious);
+      }
+
+      // Render light updates
+      renderTop();
+      if (uiTab === "market") renderMarket(); // market needs frequent refresh
+      else if (uiTab === "home") {
+        $("oddJobBtn").disabled = S.energy < oddJobEnergyCost();
+        $("passiveRate").textContent = `${formatCents(passivePerMinCents())} / min`;
+        $("netWorth").textContent = formatCents(netWorthCents());
+        $("eventBadge").innerHTML = eventBadgeHtml();
+      } else if (uiTab === "bank") {
+        // update due badge
+        renderBank();
+      }
+
+      requestAnimationFrame(loop);
+    }
+
+    // =========================================================
+    // UI wiring
+    // =========================================================
+    function wireUI() {
+      document.querySelectorAll(".tab").forEach(el => {
+        el.addEventListener("click", () => setTab(el.dataset.tab), { passive:true });
+      });
+
+      $("oddJobBtn").addEventListener("click", doOddJob, { passive:true });
+
+      $("depBtn").addEventListener("click", depositMoney, { passive:true });
+      $("wdBtn").addEventListener("click", withdrawMoney, { passive:true });
+      $("loanBtn").addEventListener("click", takeLoan, { passive:true });
+      $("payBtn").addEventListener("click", payLoan, { passive:true });
+
+      $("buyBtn").addEventListener("click", buySelected, { passive:true });
+      $("sellBtn").addEventListener("click", sellSelected, { passive:true });
+
+      $("saveBtn").addEventListener("click", () => {
+        withLock("save", 800, () => {
+          saveLocal();
+          exportToTelegram();
+          updateSaveStatus(true, S.suspicious);
+        });
+      }, { passive:true });
+
+      $("claimOfflineBtn").addEventListener("click", () => {
+        const sec = S.stats.lastOfflineSec || 0;
+        const cap = Math.min(sec, OFFLINE_CAP_SEC);
+        const eff = sec <= 0 ? 0 : Math.floor(cap * Math.pow(cap / OFFLINE_CAP_SEC, OFFLINE_DIMINISH_POW));
+        const msg = sec <= 0
+          ? "No offline time detected since last open."
+          : `Offline: ${Math.floor(sec/60)} min (capped ${Math.floor(cap/60)} min, effective ${Math.floor(eff/60)} min). Award: ${formatCents(S.stats.lastOfflineAwardCents || 0)}.`;
+        toast(msg, "neutral", 5200);
+      }, { passive:true });
+
+      $("resetBtn").addEventListener("click", () => {
+        withLock("reset", 1200, () => {
+          const ok = confirm("Hard Reset?\n\nThis will erase local progress on this device. This cannot be undone.");
+          if (!ok) return;
+          try {
+            localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(BACKUP_KEY);
+          } catch (_) {}
+          S = defaultState();
+          setChecksum(S);
+          toast("Reset complete. Starting fresh.", "warn", 3200);
+          render();
+          saveLocal();
+        });
+      }, { passive:true });
+
+      // Telegram main button integration (optional enhancement)
+      if (TWA?.MainButton) {
+        try {
+          TWA.MainButton.setText("Save");
+          TWA.MainButton.onClick(() => {
+            saveLocal();
+            exportToTelegram();
+            updateSaveStatus(true, S.suspicious);
+          });
+          TWA.MainButton.show();
+        } catch (_) {}
+      }
+    }
+
+    // =========================================================
+    // Initialize
+    // =========================================================
     function init() {
-        const user = tg.initDataUnsafe.user;
-        if(user) {
-            document.getElementById('profile-name').innerText = user.first_name || 'User';
-            if(user.photo_url) {
-                document.getElementById('profile-ava').src = user.photo_url;
-                document.getElementById('battle-user-ava').src = user.photo_url;
-            }
+      // Load save
+      const loaded = loadLocal();
+      if (!loaded) {
+        S = defaultState();
+        setChecksum(S);
+        saveLocal();
+      }
+
+      // Apply offline progress (anti-cheat capped + diminished)
+      applyOfflineProgress();
+
+      // Ensure rates recalculated
+      S.bank.depositDailyBps = getDepositDailyBps();
+      S.bank.loanDailyBps = getLoanDailyBps();
+
+      // Unlock content
+      unlockBusinessesByLevel();
+
+      // Seed selected asset if missing
+      if (!S.market.assets[S.market.selected]) S.market.selected = Object.keys(S.market.assets)[0];
+
+      // Render once
+      render();
+
+      // Wire UI
+      wireUI();
+
+      // Start loop
+      lastTickAt = nowMs();
+      requestAnimationFrame(loop);
+
+      // Lifecycle: when tab hidden/unload, save
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") {
+          S.lastSeen = nowMs();
+          saveLocal();
         }
-        updateBalance();
-        renderCases();
-        startLiveFeed();
+      });
+      window.addEventListener("beforeunload", () => {
+        S.lastSeen = nowMs();
+        saveLocal();
+      }, { passive:true });
+
+      // Small intro guidance
+      if (!loaded) {
+        toast("Welcome! Start with odd jobs, then buy a Lemonade Stand.", "good", 4200);
+      } else {
+        toast("Loaded your save. Keep building.", "neutral", 2200);
+      }
     }
 
-    function updateBalance() {
-        document.getElementById('balance').innerText = balance.toFixed(2);
-    }
-    
-    function addMoney() {
-        balance += 10000;
-        updateBalance();
-        tg.showPopup({message: 'Баланс пополнен на 10,000 (Demo)'});
-    }
-
-    // --- RENDER ---
-    function renderCases() {
-        const grid = document.getElementById('cases-list');
-        grid.innerHTML = CASES.map(c => `
-            <div class="case-card">
-                <img src="${c.img}" class="case-img">
-                <div class="case-info">
-                    <div class="case-name">${c.name}</div>
-                </div>
-                <button class="case-btn" onclick="openCase(${c.id})">${c.price.toFixed(0)}</button>
-            </div>
-        `).join('');
-    }
-
-    // --- LIVE FEED ---
-    function startLiveFeed() {
-        const track = document.getElementById('live-feed');
-        for(let i=0; i<30; i++) addLiveItem(track);
-        setInterval(() => addLiveItem(track), 1500);
-    }
-
-    function addLiveItem(track) {
-        const item = SKINS[Math.floor(Math.random() * SKINS.length)];
-        const div = document.createElement('div');
-        div.className = 'live-item';
-        div.setAttribute('data-rarity', item.rarity);
-        div.innerHTML = `<img src="${item.img}">`;
-        
-        track.insertBefore(div, track.firstChild);
-        if(track.children.length > 50) track.removeChild(track.lastChild);
-    }
-
-    // --- ROULETTE LOGIC ---
-    function openCase(id) {
-        const c = CASES.find(x => x.id === id);
-        if(balance < c.price) return tg.showAlert("Недостаточно средств!");
-        
-        balance -= c.price;
-        updateBalance();
-
-        const modal = document.getElementById('modal');
-        const strip = document.getElementById('strip');
-        const winBlock = document.getElementById('win-block');
-
-        modal.style.display = 'flex';
-        winBlock.classList.remove('active');
-        strip.style.transition = 'none';
-        strip.style.transform = 'translateX(0)';
-
-        // Генерация ленты
-        let items = [];
-        for(let i=0; i<60; i++) {
-            let skinId = c.pool[Math.floor(Math.random() * c.pool.length)];
-            items.push(SKINS[skinId]);
-        }
-        
-        // Победитель на 45 позиции
-        const winIdx = 45;
-        currentWin = items[winIdx];
-
-        strip.innerHTML = items.map(item => `
-            <div class="roulette-item ${item.rarity}">
-                <img src="${item.img}">
-            </div>
-        `).join('');
-
-        // Анимация
-        setTimeout(() => {
-            const itemWidth = 130;
-            const offset = (winIdx * itemWidth) - (window.innerWidth / 2) + (itemWidth / 2);
-            const rand = Math.floor(Math.random() * 80) - 40; // Рандом внутри карточки
-            
-            strip.style.transition = 'transform 6s cubic-bezier(0.1, 1, 0.3, 1)'; // Плавное замедление (Physics)
-            strip.style.transform = `translateX(-${offset + rand}px)`;
-            
-            if(tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
-            
-            setTimeout(() => {
-                showWin(currentWin);
-                if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-            }, 6000);
-        }, 50);
-    }
-
-    function showWin(item) {
-        document.getElementById('win-img').src = item.img;
-        document.getElementById('win-name').innerText = item.name;
-        document.getElementById('win-price').innerText = item.price.toFixed(2);
-        document.getElementById('win-price').className = `win-price ${item.rarity.replace('r-', 'text-')}`;
-        document.getElementById('win-block').classList.add('active');
-    }
-
-    function closeModal() {
-        inventory.push(currentWin);
-        renderInventory();
-        document.getElementById('modal').style.display = 'none';
-    }
-
-    function sellItem() {
-        balance += currentWin.price;
-        updateBalance();
-        document.getElementById('modal').style.display = 'none';
-    }
-
-    // --- BATTLES LOGIC ---
-    function startBattle() {
-        if(balance < 100) return tg.showAlert("Нужно 100.00");
-        balance -= 100;
-        updateBalance();
-
-        document.getElementById('battle-area').classList.remove('hidden');
-        document.getElementById('battle-res').innerText = '';
-        
-        const uCol = document.getElementById('col-user');
-        const bCol = document.getElementById('col-bot');
-        
-        // Очистка слотов
-        while(uCol.children.length > 1) uCol.removeChild(uCol.lastChild);
-        while(bCol.children.length > 1) bCol.removeChild(bCol.lastChild);
-
-        let round = 0;
-        let uTotal = 0, bTotal = 0;
-
-        const interval = setInterval(() => {
-            round++;
-            const uItem = SKINS[Math.floor(Math.random() * SKINS.length)];
-            const bItem = SKINS[Math.floor(Math.random() * SKINS.length)];
-            
-            uTotal += uItem.price;
-            bTotal += bItem.price;
-            
-            document.getElementById('score-user').innerText = uTotal.toFixed(2);
-            document.getElementById('score-bot').innerText = bTotal.toFixed(2);
-
-            addBattleSlot(uCol, uItem, uItem.price >= bItem.price);
-            addBattleSlot(bCol, bItem, bItem.price > uItem.price);
-
-            if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-
-            if(round >= 5) {
-                clearInterval(interval);
-                const win = uTotal >= bTotal;
-                const res = document.getElementById('battle-res');
-                res.innerText = win ? "ПОБЕДА" : "ПОРАЖЕНИЕ";
-                res.style.color = win ? "var(--accent-green)" : "var(--accent-red)";
-                
-                if(win) {
-                    balance += (uTotal + bTotal);
-                    updateBalance();
-                }
-            }
-        }, 1500);
-    }
-
-    function addBattleSlot(col, item, win) {
-        const div = document.createElement('div');
-        div.className = `slot-item ${win ? 'winner' : ''}`;
-        div.innerHTML = `<img src="${item.img}">`;
-        col.appendChild(div);
-    }
-
-    // --- INVENTORY ---
-    function renderInventory() {
-        const grid = document.getElementById('inventory-list');
-        grid.innerHTML = inventory.map(item => `
-            <div class="case-card" style="padding:10px;">
-                <img src="${item.img}" style="width:60px; height:50px; object-fit:contain;">
-                <div style="font-size:10px; margin-top:5px; white-space:nowrap; overflow:hidden; width:100%">${item.name}</div>
-                <div style="font-size:11px; font-weight:bold; color:var(--accent-green)">${item.price.toFixed(0)}</div>
-            </div>
-        `).join('');
-    }
-
-    // --- NAVIGATION ---
-    function switchTab(tab, el) {
-        document.querySelectorAll('.content').forEach(c => c.classList.add('hidden'));
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        
-        if(tab === 'home') document.getElementById('view-home').classList.remove('hidden');
-        if(tab === 'battles') document.getElementById('view-battles').classList.remove('hidden');
-        if(tab === 'profile') document.getElementById('view-profile').classList.remove('hidden');
-        
-        if(el) el.classList.add('active');
-        if(tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
-    }
-
-    // Init
     init();
 
-</script>
+    // =========================================================
+    // Extra: ensure rendering stays sane even if state is odd
+    // =========================================================
+    function sanitizeState() {
+      // Minimal clamps to prevent NaN / negative corruption
+      S.moneyCents = safeInt(S.moneyCents, 0);
+      if (S.moneyCents < 0 && !canGoNegative()) S.moneyCents = 0;
+      S.energy = clamp(safeInt(S.energy, 0), 0, clamp(safeInt(S.energyMax, 30), 10, 200));
+      S.level = clamp(safeInt(S.level, 1), 1, 99);
+      S.xp = clamp(safeInt(S.xp, 0), 0, 2_000_000_000);
+      S.reputation = clamp(safeInt(S.reputation, 0), 0, 50);
+      S.bank.depositCents = clamp(safeInt(S.bank.depositCents, 0), 0, getDepositLimitCents());
+      S.bank.loanPrincipalCents = clamp(safeInt(S.bank.loanPrincipalCents, 0), 0, 999_999_999_00);
+      for (const k of Object.keys(S.market.holdings)) {
+        S.market.holdings[k] = clamp(safeInt(S.market.holdings[k], 0), 0, 9_999_999_999);
+      }
+    }
+
+    // Periodic sanitize
+    setInterval(() => {
+      sanitizeState();
+    }, 8000);
+
+  })();
+  </script>
 </body>
 </html>

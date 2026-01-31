@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>С нуля до миллионера — Telegram Mini App</title>
   <style>
-    /* =========================================================
-       Mobile-first premium UI (no images, no libs)
-       ========================================================= */
     :root{
       --bg:#070A12;
       --bg2:#0b1020;
@@ -37,16 +34,26 @@
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
       --tap: 48px;
+
+      /* dynamic insets */
+      --tgTopExtra: 0px;
+      --tgBottomExtra: 0px;
+      --appH: 100vh;
+
+      /* UI scaling */
+      --uiScale: 1;
     }
 
     *{box-sizing:border-box}
     html,body{height:100%;margin:0;color:var(--text);font-family:var(--sans);-webkit-tap-highlight-color:transparent;overflow-x:hidden;}
     body{
+      min-height: calc(var(--appH));
       background:
         radial-gradient(1200px 700px at 18% -10%, rgba(110,168,255,.22), transparent 55%),
         radial-gradient(1200px 700px at 95% 10%, rgba(181,108,255,.20), transparent 60%),
         radial-gradient(900px 600px at 55% 110%, rgba(68,227,165,.12), transparent 60%),
         linear-gradient(180deg, var(--bg), var(--bg2));
+      font-size: calc(16px * var(--uiScale));
     }
     a{color:inherit}
     .app{min-height:100%;max-width:1040px;margin:0 auto;display:flex;flex-direction:column;position:relative;}
@@ -60,12 +67,11 @@
       filter: blur(.15px);
     }
 
-    /* ===== Subtle motion (reduced for accessibility) ===== */
     @media (prefers-reduced-motion: reduce){
       *{animation:none !important; transition:none !important; scroll-behavior:auto !important;}
     }
 
-    /* ====== Splash ====== */
+    /* Splash */
     .splash{
       position:fixed; inset:0; z-index:1000; display:flex; align-items:center; justify-content:center;
       background:
@@ -131,16 +137,18 @@
     .fadeOut{animation: fadeOut .38s ease forwards;}
     @keyframes fadeOut{to{opacity:0; transform:translateY(-10px); pointer-events:none}}
 
-    /* ====== Topbar (mobile-first) ====== */
+    /* Topbar: extra padding for iOS Telegram overlays (dynamic var + safe-area) */
     .topbar{
       position:sticky; top:0; z-index:60;
-      padding: max(10px, env(safe-area-inset-top)) 10px 10px;
+      padding:
+        calc(var(--tgTopExtra) + max(10px, env(safe-area-inset-top)))
+        10px
+        10px;
       background:linear-gradient(180deg, rgba(0,0,0,.62), rgba(0,0,0,.20));
       border-bottom:1px solid rgba(255,255,255,.10);
       backdrop-filter: blur(12px);
     }
     .row{display:flex; align-items:stretch; gap:10px;}
-    .space{flex:1}
     .row.wrap{flex-wrap:wrap}
 
     .pill{
@@ -150,7 +158,7 @@
       border-radius:999px;
       border:1px solid rgba(255,255,255,.12);
       background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
-      box-shadow: var(--shadow2);
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
       display:flex; flex-direction:column; gap:2px;
       overflow:hidden;
     }
@@ -207,17 +215,16 @@
       flex:0 0 auto;
     }
 
-    /* ====== Content ====== */
     .content{
       flex:1;
-      padding:12px 10px calc(104px + env(safe-area-inset-bottom));
+      padding:12px 10px calc(104px + max(env(safe-area-inset-bottom), var(--tgBottomExtra)));
     }
 
     .grid{display:grid; gap:12px}
     @media (min-width:820px){
       .grid.cols2{grid-template-columns: 1.2fr .8fr}
       .grid.cols3{grid-template-columns: 1fr 1fr 1fr}
-      .content{padding:14px 12px 120px}
+      .content{padding:14px 12px calc(120px + max(env(safe-area-inset-bottom), var(--tgBottomExtra)))}
     }
 
     .card{
@@ -256,10 +263,6 @@
     .actions{display:flex; flex-wrap:wrap; gap:10px; align-items:center}
     .actions .btn{flex: 1 1 auto}
     .actions .btn.icon{flex:0 0 auto}
-    @media (max-width:390px){
-      .actions{gap:8px}
-      .btn{padding:11px 12px}
-    }
 
     .list{display:flex; flex-direction:column; gap:10px}
     .item{
@@ -309,16 +312,12 @@
     .input:focus{border-color:rgba(110,168,255,.48)}
     .twocol{display:grid; grid-template-columns:1fr auto; gap:10px}
     .twocol .btn{min-width: 120px}
-    @media (max-width:420px){
-      .twocol{grid-template-columns:1fr}
-      .twocol .btn{width:100%}
-    }
     .footnote{margin-top:10px; color:var(--muted); font-size:12px; line-height:1.35}
 
-    /* ====== Tabs (bigger, thumb-friendly) ====== */
+    /* Tabs */
     .tabs{
       position:fixed; left:0; right:0; bottom:0; z-index:70;
-      padding:10px 10px max(10px, env(safe-area-inset-bottom));
+      padding:10px 10px calc(max(10px, env(safe-area-inset-bottom)) + var(--tgBottomExtra));
       background:linear-gradient(180deg, rgba(0,0,0,.00), rgba(0,0,0,.70));
       border-top:1px solid rgba(255,255,255,.10);
       backdrop-filter: blur(14px);
@@ -356,12 +355,12 @@
     .tab .ico{font-size:18px; line-height:1}
     .tab .lbl{font-size:12px}
 
-    /* ====== Toasts ====== */
+    /* Toasts */
     .toastwrap{position:fixed; left:0; right:0; top:0; z-index:220; pointer-events:none}
     .toaststack{
       width:min(1040px, 100%);
       margin:0 auto;
-      padding:max(10px, env(safe-area-inset-top)) 10px 10px;
+      padding:calc(max(10px, env(safe-area-inset-top)) + var(--tgTopExtra)) 10px 10px;
       display:flex; flex-direction:column; gap:8px
     }
     .toast{
@@ -381,18 +380,23 @@
     .toast .msg{font-size:13px; color:var(--text); line-height:1.25}
     .toast .msg .muted{color:var(--muted)}
 
-    /* ====== Market table (mobile scroller) ====== */
+    /* Market table */
     .tableWrap{
       overflow:auto;
       border-radius:20px;
       border:1px solid rgba(255,255,255,.12);
       background:rgba(0,0,0,.16);
+      -webkit-overflow-scrolling: touch;
     }
     .table{
       width:100%;
-      min-width: 640px; /* enables horizontal scroll on phones */
+      min-width: 600px;
       border-collapse:separate;
       border-spacing:0;
+    }
+    @media (max-width:430px){
+      .table{min-width: 540px;}
+      .table th,.table td{padding:9px 8px; font-size:11px;}
     }
     .table th,.table td{
       padding:10px 10px;
@@ -411,6 +415,7 @@
       z-index:1;
     }
     .table tr:last-child td{border-bottom:none}
+
     .chip{
       display:inline-flex; align-items:center; gap:8px;
       padding:7px 10px; border-radius:999px;
@@ -429,7 +434,7 @@
       overflow:hidden;
     }
 
-    /* ====== Modal ====== */
+    /* Modal */
     .modalBack{
       position:fixed; inset:0; z-index:320;
       background:rgba(0,0,0,.60);
@@ -439,15 +444,16 @@
       backdrop-filter: blur(10px);
     }
     .modal{
-      width:min(720px, 96vw);
+      width:min(740px, 96vw);
       border-radius:28px;
       border:1px solid rgba(255,255,255,.15);
       background:linear-gradient(180deg, rgba(255,255,255,.11), rgba(255,255,255,.03));
       box-shadow: 0 30px 95px rgba(0,0,0,.72);
       padding:14px;
       position:relative;
-      max-height: min(80vh, 740px);
+      max-height: min(84vh, 760px);
       overflow:auto;
+      -webkit-overflow-scrolling: touch;
     }
     .modal h3{margin:0 0 10px; font-size:16px}
     .modal .close{
@@ -462,11 +468,9 @@
       backdrop-filter: blur(8px);
     }
 
-    /* ====== Tab transitions ====== */
     .tabPane{animation: paneIn .18s ease}
     @keyframes paneIn{from{opacity:.70; transform:translateY(6px)} to{opacity:1; transform:none}}
 
-    /* ====== Super-compact phones ====== */
     @media (max-width:420px){
       .topbar{padding-left:8px; padding-right:8px}
       .content{padding-left:8px; padding-right:8px}
@@ -475,13 +479,14 @@
       .tab{min-height:54px}
       .pill{padding:10px 10px}
       .pill .v{font-size:13px}
+      .btn{padding:11px 12px}
+      .actions{gap:8px}
     }
   </style>
 </head>
 <body>
   <div class="noise"></div>
 
-  <!-- Splash / loading -->
   <div class="splash" id="splash" aria-hidden="false">
     <div class="splashCard">
       <div class="brand">
@@ -491,7 +496,6 @@
           <p>Экономический idle / прогресс — Telegram Mini App</p>
         </div>
       </div>
-
       <div class="barWrap">
         <div class="bar"><i id="loadBar"></i></div>
         <div class="splashMeta">
@@ -499,19 +503,16 @@
           <div class="mono" id="loadPct">0%</div>
         </div>
       </div>
-
       <div class="splashTips" id="loadTip">
-        Подсказка: первые деньги — из подработок. Потом покупай бизнес и прокачивай навыки.
+        Подсказка: старт — подработки → лимонадный стенд → прокачка → банк/рынок → ускорение.
       </div>
     </div>
   </div>
 
-  <!-- Toasts -->
   <div class="toastwrap" aria-live="polite" aria-atomic="true">
     <div class="toaststack" id="toaststack"></div>
   </div>
 
-  <!-- Modal -->
   <div class="modalBack" id="modalBack" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="modal">
       <div class="close" id="modalClose" aria-label="Закрыть">✕</div>
@@ -536,15 +537,15 @@
           <div class="v" id="level">1</div>
         </div>
         <button class="btn icon primary" id="saveBtn" aria-label="Сохранить">💾</button>
+        <button class="btn icon" id="settingsBtn" aria-label="Настройки">⚙️</button>
       </div>
     </div>
 
     <div class="content">
-      <!-- HOME -->
       <section id="tab-home" class="grid cols2 tabPane">
         <div class="card">
           <h2>Дом</h2>
-          <div class="sub">Подработки, апгрейды, инвентарь, навыки, достижения.</div>
+          <div class="sub">Подработки, апгрейды, контракты, инвентарь, навыки, достижения.</div>
 
           <div class="hr"></div>
 
@@ -557,8 +558,9 @@
 
           <div class="actions">
             <button class="btn good" id="oddJobBtn">Сделать подработку</button>
-            <button class="btn warn" id="offlineBtn">Оффлайн</button>
+            <button class="btn" id="contractsBtn">Контракты</button>
             <button class="btn" id="dailyBtn">Задания</button>
+            <button class="btn warn" id="offlineBtn">Оффлайн</button>
           </div>
 
           <div class="sub" id="homeHint"></div>
@@ -570,6 +572,7 @@
           <div class="kv"><div class="k">Пассивный доход</div><div class="v" id="passiveRate">$0.00 / мин</div></div>
           <div class="kv"><div class="k">Риск/обслуживание</div><div class="v" id="riskTag"></div></div>
           <div class="kv"><div class="k">Активное событие</div><div class="v" id="eventBadge">—</div></div>
+          <div class="kv"><div class="k">Контракт</div><div class="v" id="contractBadge">—</div></div>
 
           <div class="hr"></div>
 
@@ -585,13 +588,13 @@
           <div class="list" id="invList"></div>
 
           <div class="footnote">
-            Баланс рассчитан так, чтобы первые ~30 минут были «в кайф»: старт → первый бизнес → банк/рынок → ускорение навыками.
+            Умная прогрессия: старт → первый бизнес → банк/рынок → авто-доходы и контракты.
           </div>
         </div>
 
         <div class="card">
           <h2>Навыки</h2>
-          <div class="sub">Навыки растут от действий и дают ощутимые бонусы.</div>
+          <div class="sub">Навыки растут от действий и дают бонусы.</div>
           <div class="hr"></div>
           <div class="list" id="skillList"></div>
 
@@ -612,32 +615,30 @@
           <div class="hr"></div>
 
           <div class="actions">
-            <button class="btn bad" id="resetBtn">Жёсткий сброс</button>
             <button class="btn" id="aboutBtn">О игре</button>
+            <button class="btn bad" id="resetBtn">Жёсткий сброс</button>
           </div>
 
           <div class="footnote">
-            Анти-абьюз: оффлайн ограничен, сниженная доходность, контроль целостности, все деньги — через ledger.
+            Анти-абьюз: фиксированные центы, единый transact(), проверка целостности, оффлайн кап + уменьшение, кулдауны.
           </div>
         </div>
       </section>
 
-      <!-- BUSINESS -->
       <section id="tab-business" class="grid tabPane" style="display:none;">
         <div class="card">
           <h2>Бизнес</h2>
           <div class="sub">Покупай бизнес для пассива. У бизнеса есть расходы и риск.</div>
           <div class="hr"></div>
           <div class="list" id="bizList"></div>
-          <div class="footnote">Содержать бизнес — не бесплатно. Держи запас налички, иначе придётся продавать активы в плохой момент.</div>
+          <div class="footnote">Держи запас кэша — обслуживание и ремонты могут «кусаться».</div>
         </div>
       </section>
 
-      <!-- BANK -->
       <section id="tab-bank" class="grid cols2 tabPane" style="display:none;">
         <div class="card">
           <h2>Депозит</h2>
-          <div class="sub">Надёжно и медленно: процент в день, лимиты зависят от уровня/репутации.</div>
+          <div class="sub">Процент в день, лимиты зависят от уровня/репутации.</div>
           <div class="hr"></div>
           <div class="kv"><div class="k">На депозите</div><div class="v" id="depBal">$0.00</div></div>
           <div class="kv"><div class="k">Процент в день</div><div class="v" id="depAPR">0.00%</div></div>
@@ -654,12 +655,12 @@
             <button class="btn" id="wdBtn">Снять</button>
           </div>
 
-          <div class="footnote">Проценты начисляются и оффлайн, но в рамках лимита и с понижением, чтобы нельзя было «накрутить время».</div>
+          <div class="footnote">Проценты работают и оффлайн, но с ограничением и уменьшением отдачи.</div>
         </div>
 
         <div class="card">
           <h2>Кредит</h2>
-          <div class="sub">Можно ускориться, но просрочки бьют по репутации и забирают деньги.</div>
+          <div class="sub">Ускоряет рост, но просрочки бьют по репутации.</div>
           <div class="hr"></div>
           <div class="kv"><div class="k">Долг</div><div class="v" id="loanPrin">$0.00</div></div>
           <div class="kv"><div class="k">Процент в день</div><div class="v" id="loanAPR">0.00%</div></div>
@@ -677,15 +678,14 @@
             <button class="btn good" id="payBtn">Погасить</button>
           </div>
 
-          <div class="footnote">Долг живёт сам по себе. Если просрочишь — штрафы + ухудшение условий.</div>
+          <div class="footnote">Если просрочишь — штрафы + ухудшение условий банка.</div>
         </div>
       </section>
 
-      <!-- MARKET -->
       <section id="tab-market" class="grid cols2 tabPane" style="display:none;">
         <div class="card">
           <h2>Рынок</h2>
-          <div class="sub">Торгуй активами: есть спред, комиссия, проскальзывание. Без «вечного роста» — будут откаты.</div>
+          <div class="sub">Торгуй активами: спред, комиссия, проскальзывание. Без «вечного роста» — будут откаты.</div>
           <div class="hr"></div>
           <div class="actions" id="marketHeader"></div>
 
@@ -727,7 +727,7 @@
 
           <div class="hr"></div>
           <div class="sub" id="tradeHint"></div>
-          <div class="footnote">Нормальная стратегия: часть в кэше/депозите, часть в бизнесе, небольшой риск в рынке.</div>
+          <div class="footnote">Диверсификация: кэш/депозит/бизнес + небольшой риск на рынке.</div>
         </div>
       </section>
     </div>
@@ -747,10 +747,15 @@
   "use strict";
 
   /* =========================================================
-     1) Telegram WebApp integration (no external scripts)
+     Telegram WebApp integration (no external scripts)
      ========================================================= */
   const TWA = window.Telegram?.WebApp;
   const devMode = false; // REQUIRED: OFF
+
+  function isIOS(){
+    const ua = navigator.userAgent || "";
+    return /iPhone|iPad|iPod/i.test(ua);
+  }
 
   function haptic(kind="light"){
     try{
@@ -778,21 +783,59 @@
     if (accent) root.style.setProperty("--accent", accent);
   }
 
+  function updateViewportVars(extraTopPx, extraBottomPx){
+    const root = document.documentElement;
+    const stableH = (TWA && Number.isFinite(TWA.viewportStableHeight)) ? TWA.viewportStableHeight : window.innerHeight;
+    root.style.setProperty("--appH", stableH + "px");
+    root.style.setProperty("--tgTopExtra", (extraTopPx||0) + "px");
+    root.style.setProperty("--tgBottomExtra", (extraBottomPx||0) + "px");
+  }
+
   function telegramInit() {
-    if (!TWA) return;
+    if (!TWA) {
+      updateViewportVars(0,0);
+      return;
+    }
     try {
       TWA.ready();
       TWA.expand();
       applyTelegramTheme();
-    } catch (_) {}
+
+      // Best-effort full screen / iOS fixes (optional API calls)
+      try { TWA.requestFullscreen?.(); } catch(_){}
+      try { TWA.disableClosingConfirmation?.(); } catch(_){}
+      try { TWA.setHeaderColor?.(TWA.themeParams?.bg_color || "#000000"); } catch(_){}
+
+      // Dynamic insets (newer Telegram builds may expose these)
+      const si = TWA.safeAreaInset || TWA.safeAreaInsets || null;
+      const csi = TWA.contentSafeAreaInset || TWA.contentSafeAreaInsets || null;
+      const topSafe = (csi?.top ?? si?.top ?? 0);
+      const bottomSafe = (csi?.bottom ?? si?.bottom ?? 0);
+
+      // If Telegram doesn't provide insets, apply an iOS-only extra top to avoid overlay bars.
+      const fallbackTop = isIOS() ? 44 : 0;
+      updateViewportVars(topSafe || fallbackTop, bottomSafe || 0);
+
+      // React to viewport changes
+      try{
+        TWA.onEvent?.("viewportChanged", () => {
+          const si2 = TWA.safeAreaInset || TWA.safeAreaInsets || null;
+          const csi2 = TWA.contentSafeAreaInset || TWA.contentSafeAreaInsets || null;
+          const t = (csi2?.top ?? si2?.top ?? 0);
+          const b = (csi2?.bottom ?? si2?.bottom ?? 0);
+          updateViewportVars(t || (isIOS()?44:0), b || 0);
+        });
+      } catch(_){}
+    } catch (_) {
+      updateViewportVars(isIOS()?44:0, 0);
+    }
   }
   telegramInit();
 
   /* =========================================================
-     2) Utils
+     Utils
      ========================================================= */
   const $ = (id) => document.getElementById(id);
-
   function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
   function nowMs(){ return Date.now(); }
   function safeInt(n, fallback=0){ return Number.isSafeInteger(n) ? n : fallback; }
@@ -824,16 +867,12 @@
     const cc = v % 100;
     return `${sign}$${d.toLocaleString(undefined)}.${String(cc).padStart(2,"0")}`;
   }
-
-  function formatBpsToPct(bps){
-    return (bps/100).toFixed(2) + "%";
-  }
-
+  function formatBpsToPct(bps){ return (bps/100).toFixed(2) + "%"; }
   function isoTime(ms){
     try { return new Date(ms).toLocaleString(); } catch { return String(ms); }
   }
 
-  /* ===== Toasts ===== */
+  /* Toasts */
   function toast(msg, type="neutral", ttl=2600){
     const wrap = $("toaststack");
     const el = document.createElement("div");
@@ -848,7 +887,7 @@
     }, ttl);
   }
 
-  /* ===== Modal ===== */
+  /* Modal */
   function openModal(title, html){
     $("modalTitle").textContent = title;
     $("modalBody").innerHTML = html;
@@ -865,7 +904,7 @@
   $("modalClose").addEventListener("click", closeModal, {passive:true});
   $("modalBack").addEventListener("click", (e)=>{ if (e.target === $("modalBack")) closeModal(); }, {passive:true});
 
-  /* ===== Anti multi-click locks ===== */
+  /* Anti multi-click locks */
   const actionLocks = new Map();
   function withLock(key, ms, fn){
     const t = nowMs();
@@ -877,11 +916,11 @@
   }
 
   /* =========================================================
-     3) Saving + Integrity
+     Saving + Integrity
      ========================================================= */
-  const SCHEMA_VERSION = 5;
-  const STORAGE_KEY = "b2m_ru_save_v5";
-  const BACKUP_KEY  = "b2m_ru_backup_v5";
+  const SCHEMA_VERSION = 6;
+  const STORAGE_KEY = "b2m_ru_save_v6";
+  const BACKUP_KEY  = "b2m_ru_backup_v6";
 
   const OFFLINE_CAP_SEC = 6*60*60;
   const OFFLINE_DIMINISH_POW = 0.65;
@@ -894,10 +933,10 @@
   const SLIPPAGE_MAX_BPS = 140;
   const TRADE_COOLDOWN_MS = 900;
 
-  const TICK_MS = 1000;
   const PASSIVE_GRANULARITY_SEC = 10;
   const MARKET_STEP_SEC = 5;
   const EVENT_CHECK_SEC = 30;
+  const CONTRACT_REFRESH_MIN = 10;
 
   function fnv1a32(str){
     let h = 0x811c9dc5;
@@ -969,7 +1008,8 @@
         betterTools: 0,
         coffee: 0,
         nightCourses: 0,
-        budgeting: 0
+        budgeting: 0,
+        autopilot: 0
       },
 
       inventory: {
@@ -998,9 +1038,10 @@
           GOLD: makeAsset("Золото", 238_00, 12, 0.00035, 0.018),
           OIL:  makeAsset("Нефть",  82_00, 18, 0.00045, 0.028),
           CRYP: makeAsset("Крипто", 62_00, 30, 0.00070, 0.060),
-          STK:  makeAsset("Акции",  45_00, 14, 0.00040, 0.022)
+          STK:  makeAsset("Акции",  45_00, 14, 0.00040, 0.022),
+          FX:   makeAsset("Валюты", 18_00, 10, 0.00025, 0.016)
         },
-        holdings: { GOLD:0, OIL:0, CRYP:0, STK:0 },
+        holdings: { GOLD:0, OIL:0, CRYP:0, STK:0, FX:0 },
         history: [],
         lastMarketStep: t
       },
@@ -1010,11 +1051,22 @@
         lastEventAt: t
       },
 
+      contracts: {
+        lastRefreshAt: 0,
+        list: [],
+        active: null
+      },
+
       daily: {
         dayKey: dayKey(t),
         items: [],
         claimed: {},
         lastRefreshAt: t
+      },
+
+      settings: {
+        uiScale: 1,
+        iosTopFix: true
       },
 
       stats: {
@@ -1027,7 +1079,8 @@
         lastOfflineSec: 0,
         oddJobsDoneToday: 0,
         boughtBizToday: 0,
-        tradesToday: 0
+        tradesToday: 0,
+        contractsDone: 0
       },
 
       achievements: {
@@ -1039,7 +1092,8 @@
         netWorth10k:false,
         netWorth100k:false,
         invFilled:false,
-        skill5:false
+        skill5:false,
+        contract1:false
       },
 
       ledgerSeq: 0,
@@ -1058,19 +1112,24 @@
       createdAt: state.createdAt,
       lastSeen: state.lastSeen,
       suspicious: state.suspicious,
+
       moneyCents: state.moneyCents,
+
       level: state.level,
       xp: state.xp,
       reputation: state.reputation,
+
       energy: state.energy,
       energyMax: state.energyMax,
       energyRegenPerMin: state.energyRegenPerMin,
+
       skills: state.skills,
       oddJob: state.oddJob,
       upgrades: state.upgrades,
       inventory: state.inventory,
       businesses: state.businesses,
       bank: state.bank,
+
       market: {
         selected: state.market.selected,
         assets: Object.fromEntries(Object.entries(state.market.assets).map(([k,a]) => [k, {
@@ -1080,8 +1139,11 @@
         }])),
         holdings: state.market.holdings
       },
+
       events: state.events,
+      contracts: state.contracts,
       daily: state.daily,
+      settings: state.settings,
       stats: state.stats,
       achievements: state.achievements,
       ledgerSeq: state.ledgerSeq
@@ -1121,16 +1183,73 @@
     }
   }
 
+  function migrateStateV5toV6(p){
+    const d = defaultState();
+    const merged = Object.assign(d, p);
+    merged.schemaVersion = SCHEMA_VERSION;
+
+    // add new fields if missing
+    merged.settings = merged.settings || d.settings;
+    merged.settings.uiScale = Number.isFinite(merged.settings.uiScale) ? merged.settings.uiScale : 1;
+    merged.settings.iosTopFix = (typeof merged.settings.iosTopFix === "boolean") ? merged.settings.iosTopFix : true;
+
+    merged.contracts = merged.contracts || d.contracts;
+    merged.upgrades = merged.upgrades || d.upgrades;
+    if (typeof merged.upgrades.autopilot !== "number") merged.upgrades.autopilot = 0;
+
+    // add FX asset if absent
+    merged.market = merged.market || d.market;
+    merged.market.assets = merged.market.assets || d.market.assets;
+    merged.market.holdings = merged.market.holdings || d.market.holdings;
+    if (!merged.market.assets.FX) merged.market.assets.FX = d.market.assets.FX;
+    if (typeof merged.market.holdings.FX !== "number") merged.market.holdings.FX = 0;
+
+    merged.achievements = merged.achievements || d.achievements;
+    if (typeof merged.achievements.contract1 !== "boolean") merged.achievements.contract1 = false;
+
+    merged.stats = merged.stats || d.stats;
+    if (typeof merged.stats.contractsDone !== "number") merged.stats.contractsDone = 0;
+
+    merged.checksum = computeChecksum(merged);
+    return merged;
+  }
+
+  function loadLocalAny(){
+    // try v6 first
+    const raw6 = localStorage.getItem(STORAGE_KEY);
+    if (raw6){
+      try{ return JSON.parse(raw6); } catch(_){}
+    }
+    // fallback: try previous key v5
+    const raw5 = localStorage.getItem("b2m_ru_save_v5");
+    if (raw5){
+      try{
+        const p = JSON.parse(raw5);
+        if (p && p.schemaVersion === 5) return migrateStateV5toV6(p);
+      } catch(_){}
+    }
+    return null;
+  }
+
   function loadLocal(){
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return false;
+    const parsed = loadLocalAny();
+    if (!parsed) return false;
+
     try{
-      const parsed = JSON.parse(raw);
       if (!parsed || typeof parsed !== "object") return false;
+
+      // if still older somehow
       if (parsed.schemaVersion !== SCHEMA_VERSION){
-        toast("Версия сохранения изменилась — начинаем заново.", "warn", 3800);
+        if (parsed.schemaVersion === 5){
+          S = migrateStateV5toV6(parsed);
+          toast("Сохранение обновлено до новой версии.", "neutral", 2600);
+          saveLocal();
+          return true;
+        }
+        toast("Версия сохранения не поддерживается — новый старт.", "warn", 3800);
         return false;
       }
+
       const expected = computeChecksum(parsed);
       if (parsed.checksum !== expected){
         const braw = localStorage.getItem(BACKUP_KEY);
@@ -1156,6 +1275,7 @@
         saveLocal();
         return true;
       }
+
       S = parsed;
       S.suspicious = !!S.suspicious;
       return true;
@@ -1183,17 +1303,14 @@
   }
 
   /* =========================================================
-     4) Ledger / transact
+     Ledger / transact
      ========================================================= */
   function roundCents(n){
     if (!Number.isFinite(n)) return null;
     const v = Math.trunc(n);
     return Number.isSafeInteger(v) ? v : null;
   }
-
-  function canGoNegative(){
-    return S.bank.loanPrincipalCents > 0;
-  }
+  function canGoNegative(){ return S.bank.loanPrincipalCents > 0; }
 
   function transact(deltaCents, meta){
     const d = roundCents(deltaCents);
@@ -1229,7 +1346,7 @@
   }
 
   /* =========================================================
-     5) Economy + defs
+     Economy + defs
      ========================================================= */
   function skillDefs(){
     return [
@@ -1279,7 +1396,7 @@
         desc:"+4% к подработке и +2% к пассиву за штуку.",
         icon:"🧰", max:10, baseCost: 85_00, mult: 1.7,
         effectWork: () => (1 + 0.04 * countItem("toolkit")),
-        effectBiz: ()  => (1 + 0.02 * countItem("toolkit"))
+        effectBiz:  () => (1 + 0.02 * countItem("toolkit"))
       },
       { id:"accounting", name:"Бухгалтерия (книга)",
         desc:"-6% к обслуживанию бизнеса (стек до 4).",
@@ -1346,7 +1463,9 @@
       { id:"nightCourses", name:"Вечерние курсы", desc:"+2 XP за подработку за уровень (быстрее растёшь).", baseCostCents: 95_00, costMult: 1.9, max: 6,
         canBuy: () => S.level >= 2, onBuy: () => { addSkillXP("work", 2); } },
       { id:"budgeting", name:"Бюджетирование", desc:"-4% риск и обслуживание бизнеса. Немного лучше условия банка.", baseCostCents: 160_00, costMult: 2.05, max: 6,
-        canBuy: () => S.level >= 3, onBuy: () => { addSkillXP("fin", 3); addSkillXP("biz", 2); } }
+        canBuy: () => S.level >= 3, onBuy: () => { addSkillXP("fin", 3); addSkillXP("biz", 2); } },
+      { id:"autopilot", name:"Автоподработка", desc:"Авто-подработка каждые 20с (70% выплаты), если хватает энергии.", baseCostCents: 220_00, costMult: 2.2, max: 6,
+        canBuy: () => S.level >= 3, onBuy: () => { addSkillXP("work", 4); } }
     ];
   }
 
@@ -1363,7 +1482,7 @@
   }
 
   function budgetingRiskReduction(){
-    const b = S.upgrades.budgeting;
+    const b = S.upgrades.budgeting || 0;
     const skill = S.skills.biz?.lvl || 1;
     const skillRed = clamp(1 - (skill-1)*0.006, 0.82, 1);
     const upgRed = clamp(1 - b*0.04, 0.78, 1);
@@ -1428,13 +1547,13 @@
 
   function oddJobEnergyCost(){
     const base = S.oddJob.energyCost;
-    const coffee = S.upgrades.coffee;
+    const coffee = S.upgrades.coffee || 0;
     const reduced = Math.max(3, base - Math.floor(coffee/2));
     return clamp(Math.floor(reduced * skillEnergyCostMult()), 2, 20);
   }
   function oddJobXPGain(){
     const base = S.oddJob.xpGain;
-    const courses = S.upgrades.nightCourses;
+    const courses = S.upgrades.nightCourses || 0;
     return clamp(base + courses*2, 3, 40);
   }
   function oddJobPayoutCents(){
@@ -1565,7 +1684,7 @@
   }
 
   /* =========================================================
-     6) Achievements + Daily
+     Achievements + Daily
      ========================================================= */
   const ACH_DEFS = [
     { id:"firstDollar", name:"Первый доллар", desc:"Держи $1.00 наличкой.", rep:1, check:()=> S.moneyCents >= 100 },
@@ -1576,7 +1695,8 @@
     { id:"netWorth10k", name:"Пять цифр", desc:"Капитал $10,000.", rep:3, check:()=> netWorthCents() >= 10_000_00 },
     { id:"netWorth100k", name:"Шесть цифр", desc:"Капитал $100,000.", rep:5, check:()=> netWorthCents() >= 100_000_00 },
     { id:"invFilled", name:"Полный рюкзак", desc:"Заполни инвентарь.", rep:2, check:()=> S.achievements.invFilled === true },
-    { id:"skill5", name:"Первые навыки", desc:"Доведи любой навык до 5 уровня.", rep:2, check:()=> S.achievements.skill5 === true }
+    { id:"skill5", name:"Первые навыки", desc:"Доведи любой навык до 5 уровня.", rep:2, check:()=> S.achievements.skill5 === true },
+    { id:"contract1", name:"Первый контракт", desc:"Заверши 1 контракт.", rep:1, check:()=> (S.stats.contractsDone||0) >= 1 }
   ];
 
   function checkAchievements(){
@@ -1676,7 +1796,157 @@
   }
 
   /* =========================================================
-     7) Market simulation
+     Contracts (new feature)
+     ========================================================= */
+  function timeBucket10Min(ms){
+    const m = Math.floor(ms / 600000); // 10 min
+    return m;
+  }
+
+  function genContracts(){
+    const t = nowMs();
+    const bucket = timeBucket10Min(t);
+    const seed = parseInt(fnv1a32("c"+bucket).slice(0,8), 16) ^ (S.level*997) ^ (S.reputation*199);
+    const rng = mulberry32(seed>>>0);
+
+    const L = S.level;
+    const mk = (id, title, desc, durSec, energyCost, rewardCents, rewardXp, skillId, skillXp) =>
+      ({id,title,desc,durSec,energyCost,rewardCents,rewardXp,skillId,skillXp});
+
+    const list = [];
+    const baseDur = 70 + Math.floor(rng()*40); // 70-110
+    const basePay = 120_00 + L*35_00;
+
+    const variants = [
+      {name:"Срочный заказ", skill:"work", icon:"📦"},
+      {name:"Мини-проект", skill:"biz", icon:"🧾"},
+      {name:"Фин. поручение", skill:"fin", icon:"🧮"},
+      {name:"Аналитика рынка", skill:"trade", icon:"🔎"}
+    ];
+
+    for (let i=0;i<3;i++){
+      const v = variants[Math.floor(rng()*variants.length)];
+      const dur = clamp(baseDur + Math.floor(rng()*80) + i*25, 60, 220);
+      const eCost = clamp(8 + Math.floor(L*0.8) + i*3, 8, 42);
+      const difficulty = 1 + i*0.12 + (rng()*0.08);
+      const pay = Math.floor(basePay * difficulty * (0.90 + rng()*0.25));
+      const xp = Math.floor(14 + L*2 + i*4);
+      const sXP = Math.floor(12 + L + i*6);
+      list.push(mk(
+        `c_${bucket}_${i}`,
+        `${v.icon} ${v.name}`,
+        `Длительность: ${Math.floor(dur/60)}:${String(dur%60).padStart(2,"0")} · Требует ${eCost} энергии.`,
+        dur,
+        eCost,
+        clamp(pay, 90_00, 4_500_00),
+        clamp(xp, 10, 160),
+        v.skill,
+        clamp(sXP, 8, 200)
+      ));
+    }
+    return {list, at:t};
+  }
+
+  function refreshContractsIfNeeded(force=false){
+    const t = nowMs();
+    const need = force || !S.contracts.lastRefreshAt || (t - S.contracts.lastRefreshAt) > CONTRACT_REFRESH_MIN*60_000;
+    if (!need) return;
+    const gen = genContracts();
+    S.contracts.list = gen.list;
+    S.contracts.lastRefreshAt = gen.at;
+  }
+
+  function contractActive(){
+    const a = S.contracts.active;
+    if (!a) return null;
+    if (nowMs() > a.endsAt) return a;
+    return a;
+  }
+
+  function contractBadgeHtml(){
+    const a = S.contracts.active;
+    if (!a) return "—";
+    const t = nowMs();
+    const left = Math.max(0, Math.floor((a.endsAt - t)/1000));
+    const mm = Math.floor(left/60);
+    const ss = left%60;
+    return `<span class="tag neutral"><span class="dot"></span>${escapeHtml(a.title)} <span class="mono">(${mm}:${String(ss).padStart(2,"0")})</span></span>`;
+  }
+
+  function completeContractIfReady(diminish=1){
+    const a = S.contracts.active;
+    if (!a) return;
+    if (nowMs() < a.endsAt) return;
+
+    S.contracts.active = null;
+
+    const cash = Math.floor(a.rewardCents * diminish);
+    transact(cash, {type:"contract_reward", note:a.id, allowNegative:true});
+    S.xp = safeInt(S.xp + a.rewardXp, S.xp);
+    addSkillXP(a.skillId, a.skillXp);
+
+    S.stats.contractsDone = safeInt((S.stats.contractsDone||0) + 1, S.stats.contractsDone||0);
+
+    toast(`Контракт завершён: +${formatCents(cash)} <span class="muted">(+${a.rewardXp} XP)</span>`, "good", 4200);
+    haptic("success");
+
+    maybeLevelUp();
+    checkAchievements();
+    render();
+  }
+
+  function startContract(id){
+    withLock("contract_start", 900, () => {
+      refreshContractsIfNeeded();
+      if (S.contracts.active){
+        toast("Сначала заверши текущий контракт.", "warn");
+        haptic("warning");
+        return;
+      }
+      const c = S.contracts.list.find(x => x.id === id);
+      if (!c){ toast("Контракт недоступен.", "warn"); return; }
+      if (S.energy < c.energyCost){
+        toast("Не хватает энергии на контракт.", "warn", 3200);
+        haptic("warning");
+        return;
+      }
+      S.energy -= c.energyCost;
+      const t = nowMs();
+      S.contracts.active = {
+        id: c.id,
+        title: c.title,
+        desc: c.desc,
+        startedAt: t,
+        endsAt: t + c.durSec*1000,
+        rewardCents: c.rewardCents,
+        rewardXp: c.rewardXp,
+        skillId: c.skillId,
+        skillXp: c.skillXp,
+        energyCost: c.energyCost
+      };
+      toast(`Контракт начат: ${escapeHtml(c.title)}`, "neutral", 2200);
+      haptic("light");
+      render();
+    });
+  }
+
+  function cancelContract(){
+    withLock("contract_cancel", 900, () => {
+      const a = S.contracts.active;
+      if (!a){ toast("Нет активного контракта.", "neutral"); return; }
+      const t = nowMs();
+      const progress = clamp((t - a.startedAt) / (a.endsAt - a.startedAt), 0, 1);
+      const penaltyEnergy = Math.max(0, Math.floor(a.energyCost * (0.35 + (1-progress)*0.25)));
+      S.contracts.active = null;
+      // energy already spent; additional penalty means no refund, just notification
+      toast(`Контракт отменён. Потрачено энергии: ${a.energyCost} (штраф: +${penaltyEnergy} не возвращается)`, "warn", 3600);
+      haptic("warning");
+      render();
+    });
+  }
+
+  /* =========================================================
+     Market simulation
      ========================================================= */
   function randUnit(){ return Math.random(); }
   function randNorm(){
@@ -1787,7 +2057,7 @@
   }
 
   /* =========================================================
-     8) Events
+     Events
      ========================================================= */
   const EVENT_POOL = [
     { id:"boom",   name:"Бум рынка", kind:"vol",   mult:1.35, durMin:[3,5], note:"Волатильность выше. Движения сильнее (в обе стороны)." },
@@ -1839,7 +2109,7 @@
   }
 
   /* =========================================================
-     9) Bank interest + loan penalties
+     Bank interest + loan penalties
      ========================================================= */
   function applyBankInterest(dtSec, diminish=1){
     const days = dtSec / 86400;
@@ -1888,7 +2158,7 @@
   }
 
   /* =========================================================
-     10) Business maintenance / risk
+     Business maintenance / risk
      ========================================================= */
   let businessTimer = 0;
   function businessMaintenanceTick(dtSec){
@@ -1940,7 +2210,7 @@
   }
 
   /* =========================================================
-     11) Offline earnings + anti-cheat
+     Offline progress + anti-cheat
      ========================================================= */
   function applyOfflineProgress(){
     const t = nowMs();
@@ -1962,6 +2232,13 @@
       if (ok.ok) awarded += passive;
     }
 
+    // offline contract completion: allow, but slightly diminished to avoid abuse
+    if (S.contracts?.active && t > S.contracts.active.endsAt){
+      const elapsed = Math.min(rawSec, OFFLINE_CAP_SEC);
+      const d = 0.90 * (elapsed > 0 ? (effectiveSec / Math.max(1, elapsed)) : 0.90);
+      completeContractIfReady(clamp(d, 0.55, 0.90));
+    }
+
     S.stats.lastOfflineAwardCents = awarded;
     S.stats.lastOfflineSec = rawSec;
 
@@ -1979,7 +2256,7 @@
   }
 
   /* =========================================================
-     12) Actions (jobs, upgrades, biz, bank, trading, inventory)
+     Actions
      ========================================================= */
   function invBuy(id){
     withLock("invbuy_"+id, 650, () => {
@@ -2035,35 +2312,41 @@
     });
   }
 
-  function doOddJob(){
+  function doOddJob(payoutMultiplier=1){
+    const cost = oddJobEnergyCost();
+    if (S.energy < cost){
+      toast("Не хватает энергии. Подожди реген или купи апгрейды.", "warn", 3200);
+      haptic("warning");
+      return false;
+    }
+    S.energy -= cost;
+
+    const basePayout = oddJobPayoutCents();
+    const payout = Math.floor(basePayout * payoutMultiplier);
+    const ok = transact(payout, {type:"odd_job", note:"tap", allowNegative:true});
+    if (!ok.ok){
+      S.energy = clamp(S.energy + cost, 0, S.energyMax);
+      toast(ok.err || "Платёж не прошёл.", "bad");
+      haptic("error");
+      return false;
+    }
+
+    S.xp = safeInt(S.xp + oddJobXPGain(), S.xp);
+    S.stats.oddJobsDone = safeInt(S.stats.oddJobsDone + 1, S.stats.oddJobsDone);
+    S.stats.oddJobsDoneToday = safeInt((S.stats.oddJobsDoneToday||0) + 1, S.stats.oddJobsDoneToday||0);
+    addSkillXP("work", 2);
+
+    maybeLevelUp();
+    checkAchievements();
+    return true;
+  }
+
+  function doOddJobUser(){
     withLock("oddjob", 280, () => {
-      const cost = oddJobEnergyCost();
-      if (S.energy < cost){
-        toast("Не хватает энергии. Подожди реген или купи апгрейды.", "warn", 3200);
-        haptic("warning");
-        return;
-      }
-      S.energy -= cost;
-
-      const payout = oddJobPayoutCents();
-      const ok = transact(payout, {type:"odd_job", note:"tap", allowNegative:true});
-      if (!ok.ok){
-        S.energy = clamp(S.energy + cost, 0, S.energyMax);
-        toast(ok.err || "Платёж не прошёл.", "bad");
-        haptic("error");
-        return;
-      }
-
-      S.xp = safeInt(S.xp + oddJobXPGain(), S.xp);
-      S.stats.oddJobsDone = safeInt(S.stats.oddJobsDone + 1, S.stats.oddJobsDone);
-      S.stats.oddJobsDoneToday = safeInt((S.stats.oddJobsDoneToday||0) + 1, S.stats.oddJobsDoneToday||0);
-      addSkillXP("work", 2);
-
-      toast(`+${formatCents(payout)} <span class="muted">(-${cost} энергии)</span>`, "good", 1600);
+      const ok = doOddJob(1);
+      if (!ok) return;
+      toast(`+${formatCents(oddJobPayoutCents())} <span class="muted">(-${oddJobEnergyCost()} энергии)</span>`, "good", 1600);
       haptic("light");
-
-      maybeLevelUp();
-      checkAchievements();
       render();
     });
   }
@@ -2343,7 +2626,7 @@
   }
 
   /* =========================================================
-     13) UI render
+     UI render
      ========================================================= */
   function setTab(tab){
     uiTab = tab;
@@ -2364,6 +2647,20 @@
     $("eventBadge").innerHTML = eventBadgeHtml();
     $("repLine").textContent = String(S.reputation);
     updateSaveStatusUI(false);
+
+    // Apply UI scale
+    const scale = Number.isFinite(S.settings?.uiScale) ? S.settings.uiScale : 1;
+    document.documentElement.style.setProperty("--uiScale", String(clamp(scale, 0.9, 1.15)));
+
+    // iOS top fix toggle
+    const wantTopFix = !!S.settings?.iosTopFix;
+    const top = (wantTopFix && isIOS() && TWA) ? 44 : 0;
+    // if Telegram provides insets, telegramInit already set; here just respect toggle by zeroing when off
+    if (!wantTopFix){
+      document.documentElement.style.setProperty("--tgTopExtra", "0px");
+    } else if (!TWA){
+      document.documentElement.style.setProperty("--tgTopExtra", top + "px");
+    }
   }
 
   function renderHome(){
@@ -2375,9 +2672,10 @@
     const ev = S.events.active;
     const hint = (() => {
       if (ev && nowMs() <= ev.endsAt) return `Событие активно: ${ev.name}. ${ev.note}`;
-      if (perMin <= 0) return "Старт: подработки → лимонадный стенд → апгрейды/инвентарь → банк/рынок.";
+      if (S.contracts.active) return "Контракт в работе — дождись завершения или займись рынком/банком.";
+      if (perMin <= 0) return "Старт: подработки → лимонадный стенд → апгрейды/инвентарь → банк/рынок/контракты.";
       if (S.bank.loanPrincipalCents > 0) return "У тебя активный кредит — следи за датой платежа!";
-      return "Оптимально: бизнес (рост) + депозит (стабильность) + небольшой риск (рынок).";
+      return "Оптимально: бизнес (рост) + депозит (стабильность) + рынок/контракты (ускорение).";
     })();
     $("homeHint").textContent = hint;
 
@@ -2386,6 +2684,8 @@
 
     const risk = upkeepRiskLabel();
     $("riskTag").innerHTML = `<span class="tag ${risk.cls}"><span class="dot"></span>${risk.text}</span>`;
+
+    $("contractBadge").innerHTML = contractBadgeHtml();
 
     $("oddJobBtn").disabled = S.energy < oddJobEnergyCost();
 
@@ -2495,10 +2795,10 @@
           <div class="hr"></div>
           <div class="sub">
             <b>Как качать:</b><br>
-            ${id==="work" ? "Подработки, апгрейды работы." : ""}
-            ${id==="biz" ? "Покупка бизнеса, удержание пассива." : ""}
-            ${id==="fin" ? "Депозит, кредиты, покупки финансовых предметов." : ""}
-            ${id==="trade" ? "Сделки на рынке." : ""}
+            ${id==="work" ? "Подработки, апгрейды работы, контракты «Срочный заказ»." : ""}
+            ${id==="biz" ? "Покупка бизнеса, контракты «Мини-проект»." : ""}
+            ${id==="fin" ? "Депозит, кредиты, финансовые поручения." : ""}
+            ${id==="trade" ? "Сделки на рынке, контракты «Аналитика рынка»." : ""}
           </div>
           <div class="hr"></div>
           <div class="sub">
@@ -2727,7 +3027,7 @@
   }
 
   /* =========================================================
-     14) Modals (daily, portfolio, about, offline)
+     Modals (daily, portfolio, about, offline, contracts, settings)
      ========================================================= */
   function openDailyModal(){
     refreshDailyIfNeeded();
@@ -2815,7 +3115,7 @@
               </div>
             </div>
           `;
-        }).join("") : `<div class="sub muted">Пусто. Хочешь риск — начни с маленьких объёмов.</div>`}
+        }).join("") : `<div class="sub muted">Пусто. Начни с маленьких объёмов.</div>`}
       </div>
     `;
     openModal("Портфель", html);
@@ -2837,7 +3137,7 @@
       <div class="kv"><div class="k">Эффективно</div><div class="v mono">${Math.floor(eff/60)} мин</div></div>
       <div class="kv"><div class="k">Начислено</div><div class="v mono">${formatCents(awarded)}</div></div>
       <div class="hr"></div>
-      <div class="sub muted">Чем дольше оффлайн — тем меньше отдача. Лучший прогресс: бизнес + банк, иногда — рынок.</div>
+      <div class="sub muted">Чем дольше оффлайн — тем меньше отдача.</div>
     `;
     openModal("Оффлайн доход", html);
   }
@@ -2851,6 +3151,7 @@
       <div class="sub">
         <b>Системы:</b><br>
         • Подработки (энергия, XP)<br>
+        • Контракты (таймер, награды, прокачка навыков)<br>
         • Бизнес (пассив, обслуживание, риск)<br>
         • Банк (депозит/кредит, ставки/лимиты)<br>
         • Рынок (тренды + шум + события, комиссия/спред/проскальзывание)<br>
@@ -2865,8 +3166,152 @@
     openModal("О игре", html);
   }
 
+  function openContractsModal(){
+    refreshContractsIfNeeded(true);
+
+    const a = S.contracts.active;
+    const list = S.contracts.list || [];
+    const html = `
+      <div class="sub">
+        Контракты — быстрый буст. Можно иметь только один активный контракт.
+      </div>
+      <div class="hr"></div>
+
+      ${a ? `
+        <div class="item">
+          <div>
+            <div class="t">Активный: ${escapeHtml(a.title)} <span class="tag neutral"><span class="dot"></span>в работе</span></div>
+            <div class="d">${escapeHtml(a.desc)}<br>
+              <span class="muted">Награда: ${formatCents(a.rewardCents)} + ${a.rewardXp} XP · Навык: ${escapeHtml(skillDefs().find(s=>s.id===a.skillId)?.name||a.skillId)} +${a.skillXp}</span>
+            </div>
+          </div>
+          <div class="right">
+            <button class="btn warn" id="contractCancelBtn">Отменить</button>
+          </div>
+        </div>
+      ` : `
+        <div class="sub muted">Нет активного контракта — выбери один ниже.</div>
+      `}
+
+      <div class="hr"></div>
+      <div class="list">
+        ${list.map(c => {
+          const disabled = !!a || (S.energy < c.energyCost);
+          return `
+            <div class="item">
+              <div>
+                <div class="t">${escapeHtml(c.title)} <span class="tag neutral"><span class="dot"></span>${c.energyCost} энергии</span></div>
+                <div class="d">${escapeHtml(c.desc)}<br>
+                  <span class="muted">Награда: ${formatCents(c.rewardCents)} + ${c.rewardXp} XP · Навык: ${escapeHtml(skillDefs().find(s=>s.id===c.skillId)?.name||c.skillId)} +${c.skillXp}</span>
+                </div>
+              </div>
+              <div class="right">
+                <button class="btn ${disabled ? "" : "good"}" data-cstart="${c.id}" ${disabled ? "disabled":""}>Старт</button>
+              </div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+
+      <div class="footnote">
+        Контракты обновляются каждые ${CONTRACT_REFRESH_MIN} минут. Лучше делать их параллельно с бизнесом/банком.
+      </div>
+    `;
+    openModal("Контракты", html);
+
+    const cc = $("contractCancelBtn");
+    if (cc) cc.addEventListener("click", cancelContract, {passive:true});
+
+    $("modalBody").querySelectorAll("button[data-cstart]").forEach(b => {
+      b.addEventListener("click", () => startContract(b.dataset.cstart), {passive:true});
+    });
+  }
+
+  function openSettingsModal(){
+    const scale = clamp(Number(S.settings?.uiScale || 1), 0.9, 1.15);
+    const iosFix = !!S.settings?.iosTopFix;
+
+    const html = `
+      <div class="sub">Настройки интерфейса. Сделано под телефоны (в т.ч. iPhone в Telegram).</div>
+      <div class="hr"></div>
+
+      <div class="item">
+        <div>
+          <div class="t">UI масштаб</div>
+          <div class="d">Уменьши/увеличь плотность интерфейса.</div>
+        </div>
+        <div class="right" style="min-width:190px;">
+          <div class="actions" style="justify-content:flex-end;">
+            <button class="btn" id="scaleDown">−</button>
+            <span class="tag neutral"><span class="dot"></span><span class="mono" id="scaleVal">${scale.toFixed(2)}x</span></span>
+            <button class="btn" id="scaleUp">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div>
+          <div class="t">iPhone: отступ сверху</div>
+          <div class="d">Если Telegram перекрывает шапку — включи. Если стало слишком много пустого — выключи.</div>
+        </div>
+        <div class="right">
+          <button class="btn ${iosFix ? "good" : "warn"}" id="iosToggle">${iosFix ? "Включено" : "Выключено"}</button>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+      <div class="actions">
+        <button class="btn primary" id="applySettings">Применить</button>
+        <button class="btn" id="closeSettings">Закрыть</button>
+      </div>
+
+      <div class="footnote">
+        После изменения настроек — сохраняй (💾), чтобы закрепить.
+      </div>
+    `;
+    openModal("Настройки", html);
+
+    const apply = () => {
+      const val = clamp(Number(S.settings.uiScale || 1), 0.9, 1.15);
+      document.documentElement.style.setProperty("--uiScale", String(val));
+      renderTop();
+      render();
+    };
+
+    $("scaleDown").addEventListener("click", () => {
+      S.settings.uiScale = clamp((S.settings.uiScale||1) - 0.03, 0.9, 1.15);
+      $("scaleVal").textContent = (S.settings.uiScale).toFixed(2) + "x";
+      apply();
+    }, {passive:true});
+    $("scaleUp").addEventListener("click", () => {
+      S.settings.uiScale = clamp((S.settings.uiScale||1) + 0.03, 0.9, 1.15);
+      $("scaleVal").textContent = (S.settings.uiScale).toFixed(2) + "x";
+      apply();
+    }, {passive:true});
+
+    $("iosToggle").addEventListener("click", () => {
+      S.settings.iosTopFix = !S.settings.iosTopFix;
+      $("iosToggle").textContent = S.settings.iosTopFix ? "Включено" : "Выключено";
+      $("iosToggle").className = "btn " + (S.settings.iosTopFix ? "good" : "warn");
+      // apply immediately (best effort)
+      if (!S.settings.iosTopFix) document.documentElement.style.setProperty("--tgTopExtra", "0px");
+      else if (!TWA && isIOS()) document.documentElement.style.setProperty("--tgTopExtra", "44px");
+      renderTop();
+      render();
+    }, {passive:true});
+
+    $("applySettings").addEventListener("click", () => {
+      toast("Настройки применены.", "good", 1800);
+      haptic("success");
+      renderTop();
+      render();
+    }, {passive:true});
+
+    $("closeSettings").addEventListener("click", closeModal, {passive:true});
+  }
+
   /* =========================================================
-     15) Sanitization
+     Sanitization
      ========================================================= */
   function sanitizeState(){
     S.moneyCents = safeInt(S.moneyCents, 0);
@@ -2908,19 +3353,28 @@
     for (const sym of Object.keys(S.market.holdings)){
       S.market.holdings[sym] = clamp(safeInt(S.market.holdings[sym], 0), 0, 9_999_999_999);
     }
+
+    if (!S.contracts || typeof S.contracts !== "object") S.contracts = defaultState().contracts;
+    if (!Array.isArray(S.contracts.list)) S.contracts.list = [];
+    if (S.contracts.active && typeof S.contracts.active !== "object") S.contracts.active = null;
+
+    if (!S.settings || typeof S.settings !== "object") S.settings = defaultState().settings;
+    S.settings.uiScale = clamp(Number(S.settings.uiScale || 1), 0.9, 1.15);
+    S.settings.iosTopFix = !!S.settings.iosTopFix;
   }
 
   /* =========================================================
-     16) UI wiring + reset + Telegram MainButton
+     UI wiring + reset + Telegram MainButton
      ========================================================= */
   function wireUI(){
     document.querySelectorAll(".tab").forEach(el => {
       el.addEventListener("click", () => setTab(el.dataset.tab), {passive:true});
     });
 
-    $("oddJobBtn").addEventListener("click", doOddJob, {passive:true});
+    $("oddJobBtn").addEventListener("click", doOddJobUser, {passive:true});
     $("offlineBtn").addEventListener("click", openOfflineModal, {passive:true});
     $("dailyBtn").addEventListener("click", openDailyModal, {passive:true});
+    $("contractsBtn").addEventListener("click", openContractsModal, {passive:true});
 
     $("depBtn").addEventListener("click", depositMoney, {passive:true});
     $("wdBtn").addEventListener("click", withdrawMoney, {passive:true});
@@ -2939,6 +3393,8 @@
       });
     }, {passive:true});
 
+    $("settingsBtn").addEventListener("click", openSettingsModal, {passive:true});
+
     $("resetBtn").addEventListener("click", () => {
       withLock("reset", 1200, () => {
         const ok = confirm("Жёсткий сброс?\n\nЭто удалит прогресс на этом устройстве. Отменить нельзя.");
@@ -2946,6 +3402,8 @@
         try{
           localStorage.removeItem(STORAGE_KEY);
           localStorage.removeItem(BACKUP_KEY);
+          localStorage.removeItem("b2m_ru_save_v5");
+          localStorage.removeItem("b2m_ru_backup_v5");
         }catch(_){}
         S = defaultState();
         setChecksum(S);
@@ -2972,36 +3430,14 @@
   }
 
   /* =========================================================
-     17) Market trade helpers UI
-     ========================================================= */
-  function renderMarketTradePanel(){
-    const sym = S.market.selected;
-    const a = S.market.assets[sym];
-    if (!a){
-      $("selAsset").textContent = "—";
-      $("bidAsk").textContent = "—";
-      $("feeLine").textContent = "—";
-      $("tradeHint").textContent = "Выбери актив в таблице.";
-      return;
-    }
-    const {bid, ask} = bidAskFor(sym);
-    $("selAsset").textContent = `${a.name} (${sym})`;
-    $("bidAsk").textContent = `${formatCents(bid)} / ${formatCents(ask)}`;
-    $("feeLine").textContent = `${formatBpsToPct(tradeFeeBpsEffective())} комиссия + ${formatBpsToPct(SPREAD_BPS)} спред (+проскальзывание)`;
-    const held = S.market.holdings[sym] || 0;
-    const val = Math.floor(held * a.priceCents / UNIT_SCALE);
-    $("tradeHint").innerHTML = `У тебя: <span class="mono">${formatQtyMilli(held)}</span> · стоимость <span class="mono">${formatCents(val)}</span>. <span class="muted">Не играй ва-банк.</span>`;
-  }
-
-  /* =========================================================
-     18) Loading animation
+     Loading animation
      ========================================================= */
   const loadTips = [
     "Подсказка: первые $50 быстрее всего добываются подработками.",
+    "Подсказка: контракты — быстрый буст, но требуют энергию.",
     "Подсказка: бизнес — лучший пассив, но требует кэш на обслуживание.",
     "Подсказка: депозит — «подушка», рынок — риск. Балансируй.",
-    "Подсказка: навыки сильно ускоряют доход — особенно «Работа» и «Бизнес».",
-    "Подсказка: инвентарь даёт бонусы. Рюкзак+ расширяет слоты."
+    "Подсказка: навыки и инвентарь ускоряют рост — особенно «Работа» и «Бизнес»."
   ];
   function sleep(ms){ return new Promise(res => setTimeout(res, ms)); }
 
@@ -3014,8 +3450,8 @@
     const steps = [
       {p:12, t:"Инициализация…"},
       {p:24, t:"Проверка сохранения…"},
-      {p:40, t:"Применение оффлайн прогресса…"},
-      {p:60, t:"Загрузка рынка и событий…"},
+      {p:40, t:"Оффлайн прогресс…"},
+      {p:60, t:"Рынок/события/контракты…"},
       {p:78, t:"Подготовка интерфейса…"},
       {p:92, t:"Финальные штрихи…"},
       {p:100,t:"Готово!"}
@@ -3026,17 +3462,33 @@
       text.textContent = steps[i].t;
       bar.style.width = steps[i].p + "%";
       pct.textContent = steps[i].p + "%";
-      await sleep(130 + Math.floor(Math.random()*120));
+      await sleep(120 + Math.floor(Math.random()*140));
     }
   }
 
   /* =========================================================
-     19) Events + misc UI (market header), plus missing functions
+     Auto-work (autopilot upgrade)
      ========================================================= */
-  function tradeFeeLine(){ return `${formatBpsToPct(tradeFeeBpsEffective())} комиссия`; }
+  let autoWorkTimer = 0;
+  function autopilotTick(dtSec){
+    const lvl = S.upgrades.autopilot || 0;
+    if (lvl <= 0) return;
+    autoWorkTimer += dtSec;
+    const interval = clamp(22 - lvl*2, 10, 22); // faster with levels
+    if (autoWorkTimer < interval) return;
+    autoWorkTimer = 0;
+
+    // Attempt auto job at 70% payout to avoid "free" money; still consumes energy.
+    const ok = doOddJob(0.70);
+    if (ok){
+      toast(`Авто-подработка: +${formatCents(Math.floor(oddJobPayoutCents()*0.70))}`, "neutral", 1400);
+      haptic("light");
+      render();
+    }
+  }
 
   /* =========================================================
-     20) Game Loop
+     Game Loop
      ========================================================= */
   let lastTickAt = nowMs();
   let accumPassive = 0;
@@ -3051,6 +3503,10 @@
     lastTickAt = t;
 
     energyTick(dtSec);
+    autopilotTick(dtSec);
+
+    // contracts
+    completeContractIfReady(1);
 
     accumPassive += dtSec;
     if (accumPassive >= PASSIVE_GRANULARITY_SEC){
@@ -3080,6 +3536,7 @@
     if (accumEvent >= EVENT_CHECK_SEC){
       accumEvent = 0;
       maybeStartEvent();
+      refreshContractsIfNeeded(false);
     }
 
     S.lastSeen = t;
@@ -3098,13 +3555,14 @@
       $("passiveRate").textContent = `${formatCents(passivePerMinCents())} / мин`;
       $("netWorth").textContent = formatCents(netWorthCents());
       $("eventBadge").innerHTML = eventBadgeHtml();
+      $("contractBadge").innerHTML = contractBadgeHtml();
     }
 
     requestAnimationFrame(loop);
   }
 
   /* =========================================================
-     21) Init
+     Init
      ========================================================= */
   async function init(){
     const loaded = loadLocal();
@@ -3116,6 +3574,7 @@
 
     sanitizeState();
     refreshDailyIfNeeded();
+    refreshContractsIfNeeded(true);
     applyOfflineProgress();
     unlockBusinessesByLevel();
 
@@ -3140,8 +3599,19 @@
       saveLocal();
     }, {passive:true});
 
-    if (!loaded) toast("Добро пожаловать! Начни с подработок и купи лимонадный стенд.", "good", 4200);
+    if (!loaded) toast("Добро пожаловать! Начни с подработок, затем купи лимонадный стенд и контракты.", "good", 4200);
     else toast("Сохранение загружено. Погнали дальше.", "neutral", 2200);
+
+    // Extra iPhone fixes after init (respect toggle)
+    if (TWA){
+      try{
+        const apply = () => {
+          const want = !!S.settings?.iosTopFix;
+          if (!want) document.documentElement.style.setProperty("--tgTopExtra","0px");
+        };
+        apply();
+      } catch(_){}
+    }
   }
 
   setInterval(() => { sanitizeState(); }, 8000);
